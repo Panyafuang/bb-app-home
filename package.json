@@ -1,0 +1,26 @@
+{
+  "name": "bb-gold-importer",
+  "version": "1.0.0",
+  "description": "CSV import tool for BB Gold jewelry manufacturer bookkeeping system",
+  "main": "import-script.js",
+  "scripts": {
+    "build": "tsc",
+    "import": "node dist/import-script.js",
+    "import:csv": "pnpm build && node dist/import-script.js ./import.csv",
+    "dev": "ts-node import-script.ts",
+    "dev:import": "ts-node import-script.ts ./import.csv"
+  },
+  "keywords": ["gold", "jewelry", "csv", "import", "postgres"],
+  "author": "BB Gold Team",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3",
+    "csv-parse": "^5.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/pg": "^8.10.7",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1"
+  }
+}

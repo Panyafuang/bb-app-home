@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: bb-gold-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bb_gold}
+      POSTGRES_USER: ${POSTGRES_USER:-bb_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./persist:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bb_user} -d ${POSTGRES_DB:-bb_gold}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - bb-gold-network
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: bb-gold-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bb-gold-network
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: bb-gold-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-bb_gold_admin}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_PATHS_DATA: /var/lib/grafana
+    volumes:
+      - ./persist/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bb-gold-network
+    user: "472:472"
+
+  importer:
+    image: node:18-alpine
+    container_name: bb-gold-importer
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-bb_gold}
+      POSTGRES_USER: ${POSTGRES_USER:-bb_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bb-gold-network
+    profiles:
+      - tools
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm import:csv"
+
+# No named volumes needed - using local directory persistence
+
+networks:
+  bb-gold-network:
+    driver: bridge
