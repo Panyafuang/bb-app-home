@@ -35,13 +35,18 @@ createRoot(document.getElementById("root")!).render(
             newestOnTop
           /> */}
           <ToastI18nProvider /> {/* ✅ ใช้ตัวที่ผูกกับ i18n */}
-
           {/* กำหนดเส้นทางหน้า (routes) */}
           <Routes>
-            <Route path="/golds" element={<GoldListPage />} />
+            {/* <Route path="/golds" element={<GoldListPage />} /> */}
+
+            {/* ✅ ใหม่: รายการวัตถุดิบ -> ทอง (ใช้หน้า list เดิมไปก่อน) */}
+            <Route path="/materials/gold" element={<GoldListPage />} />
 
             {/* ✅ route อื่นที่ไม่รู้จัก → ส่งกลับ /golds */}
-            <Route path="*" element={<Navigate to="/golds" replace />} />
+            <Route
+              path="*"
+              element={<Navigate to="/materials/gold" replace />}
+            />
           </Routes>
         </AppShell>
       </BrowserRouter>

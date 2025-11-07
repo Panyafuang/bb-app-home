@@ -54,5 +54,6 @@
   "crumb.dashboard": "Dashboard",
   "crumb.products": "Products",
   "toast.saved": "Saved",
-  "toast.failed": "Something went wrong"
+  "toast.failed": "Something went wrong",
+    "actions.add": "Add record"
 }

@@ -74,9 +74,9 @@ export default function RecordsTable({
   ));
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-      <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-full divide-y divide-gray-200 text-sm">
+        <thead className="text-sm text-gray-700 uppercase bg-gray-50">
           <tr>
             <th className="px-4 py-3 w-14">#</th>
             <th className="px-4 py-3">{t("table.date")}</th>
@@ -108,7 +108,7 @@ export default function RecordsTable({
               return (
                 <tr
                   key={i}
-                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  className="bg-white border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="px-6 py-4">{order}</td>
                   <td className="px-6 py-4">

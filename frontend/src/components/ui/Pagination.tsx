@@ -32,7 +32,7 @@ export default function Pagination({
           <label className="flex items-center gap-2">
             <span className="text-gray-600">{t("pagination.perPage")}</span>
             <select
-              className="rounded-md border px-2 py-1"
+              className="rounded-md border border-gray-200 px-2 py-1"
               value={limit}
               onChange={(e) => onLimitChange?.(Number(e.target.value))}
             >
@@ -43,7 +43,7 @@ export default function Pagination({
 
         <div className="flex items-center gap-2">
           <button
-            className="rounded-lg border px-3 py-1 disabled:opacity-40"
+            className="rounded-lg border border-gray-200 px-3 py-1 disabled:opacity-40"
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
           >
@@ -59,8 +59,8 @@ export default function Pagination({
                 <button
                   key={p}
                   onClick={() => onPageChange(p)}
-                  className={`rounded-lg border px-3 py-1 ${
-                    p === page ? "bg-gray-900 text-white" : "hover:bg-gray-50"
+                  className={`rounded-lg border border-gray-200 px-3 py-1 ${
+                    p === page ? "bg-blue-600 text-white" : "hover:bg-gray-50"
                   }`}
                 >
                   {p}
@@ -69,7 +69,7 @@ export default function Pagination({
             })}
 
           <button
-            className="rounded-lg border px-3 py-1 disabled:opacity-40"
+            className="rounded-lg border border-gray-200 px-3 py-1 disabled:opacity-40"
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
           >

@@ -9,22 +9,32 @@ export default function LanguageToggle() {
     i18n.changeLanguage(lang);
   }
 
-  return <div className="inline-flex overflow-hidden rounded-xl border">
-    <button
+  return (
+    <div className="inline-flex overflow-hidden rounded-xl border border-gray-200">
+      <button
         type="button"
         onClick={() => switchTo("th")}
-        className={`px-3 py-1 text-sm ${current === "th" ? "bg-gray-900 text-white" : "bg-white hover:bg-gray-50"}`}
+        className={`px-3 py-1 text-sm ${
+          current === "th"
+            ? "bg-blue-600 text-white"
+            : "bg-white hover:bg-gray-50"
+        }`}
         aria-pressed={current === "th"}
-    >
+      >
         TH
-    </button>
-    <button
+      </button>
+      <button
         type="button"
         onClick={() => switchTo("en")}
-        className={`px-3 py-1 text-sm ${current === "en" ? "bg-gray-900 text-white" : "bg-white hover:bg-gray-50"}`}
+        className={`px-3 py-1 text-sm ${
+          current === "en"
+            ? "bg-blue-600 text-white"
+            : "bg-white hover:bg-gray-50"
+        }`}
         aria-pressed={current === "en"}
-    >
+      >
         EN
-    </button>
-  </div>;
+      </button>
+    </div>
+  );
 }

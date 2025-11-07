@@ -54,5 +54,6 @@
   "crumb.dashboard": "แดชบอร์ด",
   "crumb.products": "สินค้า",
   "toast.saved": "บันทึกสำเร็จ",
-  "toast.failed": "เกิดข้อผิดพลาด"
+  "toast.failed": "เกิดข้อผิดพลาด",
+  "actions.add": "เพิ่มรายการ"
 }
