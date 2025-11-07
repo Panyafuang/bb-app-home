@@ -1,0 +1,4 @@
+/* ทำให้ปุ่มเป็นรูปมือทุกที่ */
+button, [type="button"], [role="button"] { cursor: pointer; }
+/* ปุ่มที่ปิดการใช้งาน เป็นรูปห้ามคลิก */
+button:disabled, [aria-disabled="true"] { cursor: not-allowed; }

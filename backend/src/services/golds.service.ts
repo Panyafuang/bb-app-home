@@ -43,7 +43,10 @@ export async function searchGolds(rawParams: RawSearchParams): Promise<{ items: 
 
   // Parse และ normalize ค่าทั้งหมด
   const page = Math.max(parseNumber(rawParams.page) ?? 1, 1);
-  const limit = Math.max(parseNumber(rawParams.limit) ?? 50, 100);
+  const rawLimit = Number(rawParams.limit);
+  const limit = Number.isFinite(rawLimit)
+    ? Math.min(Math.max(rawLimit, 1), 100) // 1..100
+    : 100;                                 // default
   const offset = parseNumber(rawParams.offset) ?? (page - 1) * limit;
 
   // Parse filters
