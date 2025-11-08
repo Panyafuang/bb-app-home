@@ -178,9 +178,14 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       type: "link",
       to: "/ecommerce",
       icon: <LuShoppingCart />,
-      label: "E-commerce",
+      label: isTH ? "อีคอมเมิร์ซ" : "E-commerce",
     },
-    { type: "link", to: "/inbox", icon: <LuInbox />, label: "Inbox" },
+    { 
+      type: "link", 
+      to: "/inbox", 
+      icon: <LuInbox />, 
+      label: isTH ? "กล่องจดหมาย" : "Inbox" 
+    },
     {
       type: "link",
       to: "/users",
@@ -199,7 +204,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
           to: "/materials/golds",
           icon: <LuCoins />,
           label: isTH ? "ทอง" : "Gold",
-          end: true,
+          // end: true,
         },
         // ถ้าภายหลังมี “เงิน / แพลทินัม” ก็เติมใน children ได้เลย
       ],
@@ -293,7 +298,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
                       <NavLink
                         key={c.to}
                         to={c.to}
-                        end={c.end}
+                        // end={c.end}
                         title={collapsed ? c.label : undefined}
                         className={({ isActive }) => linkClass(isActive)}
                       >

@@ -1,9 +1,8 @@
-// ✅ ฟอร์ม Create/Edit — กรอกวันที่, เลขอ้างอิง, ทิศทาง IN/OUT, น้ำหนัก, ledger, details, remarks
 // หมายเหตุ: ทำเวอร์ชันง่ายก่อน (useState) — ภายหลังอัปเกรดเป็น react-hook-form + zod ได้
 import { useState, useMemo, useEffect } from "react"; // 1. Import useEffect
 import { useTranslation } from "react-i18next";
 
-// --- ✅ 1. เพิ่มค่าคงที่และฟังก์ชัน Helpers (นอก Component) ---
+// --- TODO: เพิ่มค่าคงที่และฟังก์ชัน Helpers (นอก Component) ---
 const LEDGERS = [
   "Beauty Bijoux",
   "Green Gold",
@@ -39,7 +38,7 @@ const parseNumber = (v: any): number | null => {
   return Number.isNaN(n) ? null : n;
 };
 
-// --- ✅ 2. เพิ่ม Helpers สำหรับ Calculated Loss (ตาม Spec) ---
+// --- เพิ่ม Helpers สำหรับ Calculated Loss (ตาม Spec) ---
 
 /** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
 function toDecimalFromPercentInput(str: string): number | null {
@@ -79,7 +78,7 @@ export default function GoldForm({
 }) {
   const { t } = useTranslation("common");
 
-  // ✅ สร้าง state จาก defaultValues (ถ้ามี)
+  // สร้าง state จาก defaultValues (ถ้ามี)
   const [date, setDate] = useState<string>(
     defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO()
   );
@@ -105,7 +104,7 @@ export default function GoldForm({
   const [remarks, setRemarks] = useState(defaultValues?.remarks || "");
   const [category, setCategory] = useState(defaultValues?.category || "");
 
-  // --- ✅ 3. อัปเดต State สำหรับ Calculated Loss (ให้เก็บเป็น Display String) ---
+  // --- 3. อัปเดต State สำหรับ Calculated Loss (ให้เก็บเป็น Display String) ---
   const [calculatedLoss, setCalculatedLoss] = useState(() => {
     // แปลง Decimal (0.06) จาก DB มาเป็น String ("6.00") เพื่อแสดงผล
     if (
@@ -123,7 +122,7 @@ export default function GoldForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false); // State เพื่อบอกว่า "ให้เริ่มแสดง Error ได้"
 
-  // --- ✅ 4. เพิ่ม Auto-fill Logic (useEffect) ---
+  // --- เพิ่ม Auto-fill Logic (useEffect) ---
   useEffect(() => {
     // ถ้าผู้ใช้พิมพ์เองแล้ว หรืออยู่ในโหมด Edit ให้หยุด
     if (lossManuallySet) return;
@@ -138,7 +137,7 @@ export default function GoldForm({
     }
   }, [ledger, reference, lossManuallySet]); // ทำงานเมื่อ Ledger หรือ Reference เปลี่ยน
 
-  // 5. สร้าง Error Object แบบ Real-time
+  // สร้าง Error Object แบบ Real-time
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     const today = getTodayISO();
@@ -159,7 +158,7 @@ export default function GoldForm({
     else if (Number(weight) <= 0) e.weight = t("validation.weight.positive");
     if (category.trim() === "") e.category = t("validation.required");
 
-    // --- ✅ 6. อัปเดต Validation สำหรับ Calculated Loss (ตาม Spec) ---
+    // --- อัปเดต Validation สำหรับ Calculated Loss (ตาม Spec) ---
     if (calculatedLoss.trim() !== "") {
       const dec = toDecimalFromPercentInput(calculatedLoss);
       if (dec === null) {
@@ -172,16 +171,16 @@ export default function GoldForm({
     return e;
   }, [date, reference, direction, weight, category, calculatedLoss, t]); // <-- เพิ่ม calculatedLoss และ t
 
-  // 7. ตรวจสอบว่าฟอร์มพร้อมส่งหรือไม่
+  // ตรวจสอบว่าฟอร์มพร้อมส่งหรือไม่
   const canSubmit = Object.keys(errors).length === 0;
 
-  // --- 💅 CSS Classes ที่คุณกำหนด (ไม่เปลี่ยนแปลง) ---
+
   const inputStyle =
     "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
   const errorStyle = "border-red-500 ring-2 ring-red-100 border-2";
-  // --- จบส่วน CSS ---
 
-  // ✅ 8. อัปเดตฟังก์ชัน Reset
+
+  // 8. อัปเดตฟังก์ชัน Reset
   function handleReset() {
     setShowErrors(false); // ซ่อน Error
     setDate(
@@ -217,7 +216,7 @@ export default function GoldForm({
     setLossManuallySet(mode === "edit"); // ถ้าเป็นโหมด Edit ให้ถือว่า Manual (ไม่ Auto-fill)
   }
 
-  // ✅ 9. อัปเดตฟังก์ชัน Submit
+  // 9. อัปเดตฟังก์ชัน Submit
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -363,7 +362,6 @@ export default function GoldForm({
         <ErrorMessage field="weight" />
       </div>
 
-      {/* --- ⬇️ ฟิลด์ที่แก้ไข (ตาม Spec) ⬇️ --- */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {t("form.calculated_loss")}
@@ -382,7 +380,6 @@ export default function GoldForm({
         />
         <ErrorMessage field="calculated_loss" />
       </div>
-      {/* --- ⬆️ จบฟิลด์ที่แก้ไข ⬆️ --- */}
 
       <div className="md:col-span-3">
         <label className="block text-sm font-medium">{t("form.ledger")}</label>
@@ -421,7 +418,6 @@ export default function GoldForm({
         </select>
         <ErrorMessage field="category" />
       </div>
-      {/* --- จบส่วน JSX --- */}
 
       <div className="md:col-span-6">
         <label className="block text-sm font-medium">{t("form.details")}</label>
@@ -444,8 +440,8 @@ export default function GoldForm({
 
       <div className="md:col-span-12 flex justify-end gap-2">
         <button
-          type="button" // ❗️ เปลี่ยนจาก "reset" เป็น "button"
-          className="rounded-xl px-4 py-2 hover:bg-gray-50 text-sm"
+          type="button"
+          className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200 "
           onClick={handleReset}
         >
           {t("form.reset")}

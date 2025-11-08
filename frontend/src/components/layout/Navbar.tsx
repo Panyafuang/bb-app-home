@@ -57,7 +57,7 @@ export default function Navbar({
             </button>
             <LanguageToggle />
             <img
-              src="https://i.pravatar.cc/40?img=3"
+              src="https://i.pravatar.cc/40?img=1"
               alt="avatar"
               className="h-9 w-9 rounded-full ring-2 ring-white shadow"
             />

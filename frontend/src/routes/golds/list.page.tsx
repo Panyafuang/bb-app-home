@@ -1,8 +1,3 @@
-// ✅ หน้า “รายการทอง” (Light mode) + ปุ่มเพิ่มรายการมุมขวาบน
-// - แสดง Breadcrumbs ซ้าย / ปุ่ม “+ เพิ่มรายการ” ขวา
-// - ใช้ useGoldsQuery ดึงข้อมูล พร้อม page/limit
-// - ส่งต่อให้ RecordsTable แสดงผล + paginate
-// - โค้ดคอมเมนต์ไทยเพื่ออ่านง่าย
 import { useGoldsQuery } from "@/features/golds/hooks/useGoldsQuery";
 import RecordsTable from "@/features/golds/components/RecordsTable";
 import Pagination from "@/components/ui/Pagination";
@@ -29,24 +24,12 @@ export default function GoldListPage() {
     <div className="space-y-4">
       <Breadcrumbs />
       <div className="mb-6 flex items-center justify-start">
-        {/* ส่วนที่แก้ไข: เพิ่มหัวข้อ รายงานสินค้า/วัตถุดิบ */}
-        {/* <h1 className="text-2xl font-semibold">
-          <span className="text-blue-700">{t("header.material_report")}</span>
-        </h1> */}
-        {/* <h1 className="mb-3 text-2xl font-semibold text-gray-700 dark:text-white md:text-2xl lg:text-3xl">
-          <span className="text-transparent bg-clip-text bg-linear-to-r to-emerald-600 from-sky-400">
-            {t("header.material_report")}
-          </span>
-        </h1> */}
         <h1 className="mb-3 text-2xl font-semibold text-gray-700 dark:text-white md:text-2xl lg:text-3xl">
           <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-indigo-600">
             {t("header.material_report")}
           </span>
         </h1>
       </div>
-      {/* <Breadcrumbs /> */}
-
-      {/* แถวบน: breadcrumb ซ้าย + ปุ่มเพิ่มขวา */}
       <div className="flex items-center justify-end">
         {/* <Breadcrumbs
           items={[
