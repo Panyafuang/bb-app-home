@@ -94,7 +94,7 @@ import useBreadcrumbs from "@/hooks/useBreadcrumbs";
 
 export default function Breadcrumbs({ className = "" }: { className?: string }) {
   // 1. (แก้ไข) ดึง i18n instance ออกมาจาก useTranslation
-  const { t, i18n } = useTranslation("common"); 
+  const { i18n } = useTranslation("common"); 
   const { pathname } = useLocation();
 
   // 2. (แก้ไข) ส่ง i18n.language (ภาษาที่ i18next ใช้อยู่)

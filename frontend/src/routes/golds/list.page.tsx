@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
  * หน้ารายการ: มี SearchBar + Table + Pagination
  */
 export default function GoldListPage() {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
 
   const { data, isLoading, filters, setFilters, refetch } = useGoldsQuery({
     page: 1,
@@ -27,28 +27,38 @@ export default function GoldListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="mb-6 flex items-center justify-between">
+      <Breadcrumbs />
+      <div className="mb-6 flex items-center justify-start">
         {/* ส่วนที่แก้ไข: เพิ่มหัวข้อ รายงานสินค้า/วัตถุดิบ */}
-        <h1 className="text-2xl font-semibold">
+        {/* <h1 className="text-2xl font-semibold">
           <span className="text-blue-700">{t("header.material_report")}</span>
+        </h1> */}
+        {/* <h1 className="mb-3 text-2xl font-semibold text-gray-700 dark:text-white md:text-2xl lg:text-3xl">
+          <span className="text-transparent bg-clip-text bg-linear-to-r to-emerald-600 from-sky-400">
+            {t("header.material_report")}
+          </span>
+        </h1> */}
+        <h1 className="mb-3 text-2xl font-semibold text-gray-700 dark:text-white md:text-2xl lg:text-3xl">
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-indigo-600">
+            {t("header.material_report")}
+          </span>
         </h1>
       </div>
       {/* <Breadcrumbs /> */}
 
       {/* แถวบน: breadcrumb ซ้าย + ปุ่มเพิ่มขวา */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         {/* <Breadcrumbs
           items={[
             { label: t("crumb.home"), href: "/" },
             { label: t("crumb.golds") },
           ]}
         /> */}
-        <Breadcrumbs />
 
         {/* ปุ่ม “เพิ่มรายการ” */}
         <Link
           to="/materials/golds/new"
-          className="inline-flex items-center text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+          className="inline-flex items-center text-white bg-linear-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-linear-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
         >
           + {t("actions.add")}
         </Link>
