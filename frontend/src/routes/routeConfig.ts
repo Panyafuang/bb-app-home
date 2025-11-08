@@ -8,12 +8,16 @@ export const routes = {
     path: "/materials",
     label: { th: "รายการวัตถุดิบ", en: "Materials" },
   },
-  materialsGold: { path: "/materials/gold", label: { th: "ทอง", en: "Gold" } },
-
+  materialsGold: { path: "/materials/golds", label: { th: "ทอง", en: "Gold" } },
   goldsCreate: {
-    path: "/golds/create",
+    path: "/materials/golds/new",
     label: { th: "เพิ่มรายการ", en: "Create" },
   },
+
+  // goldsCreate: {
+  //   path: "/golds/create",
+  //   label: { th: "เพิ่มรายการ", en: "Create" },
+  // },
 };
 
 // ใช้หา label จาก path แบบหยาบๆ (สำหรับ breadcrumb จาก URL segment)

@@ -196,7 +196,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       base: "/materials",
       children: [
         {
-          to: "/materials/gold",
+          to: "/materials/golds",
           icon: <LuCoins />,
           label: isTH ? "ทอง" : "Gold",
           end: true,

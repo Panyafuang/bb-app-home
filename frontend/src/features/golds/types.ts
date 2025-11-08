@@ -37,7 +37,7 @@ export interface CreateGoldDTO {
   calculated_loss?: number | null;
   ledger?: Ledger | null;
   remarks?: string | null;
-  category?: Category | null;
+  category: Category;
 }
 export interface UpdateGoldDTO extends Partial<CreateGoldDTO> { }
 

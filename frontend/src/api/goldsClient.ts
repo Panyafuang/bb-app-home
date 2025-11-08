@@ -35,3 +35,8 @@ export async function deleteGold(id: string) {
   const { data } = await api.delete<{ deleted: boolean }>(`${BASE}/${id}`);
   return data;
 }
+
+export async function createGold(payload: CreateGoldDTO) {
+  const { data } = await api.post<GoldRecord>(BASE, payload);
+  return data;
+}

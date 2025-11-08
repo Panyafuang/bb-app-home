@@ -17,6 +17,7 @@ import AppShell from "./layouts/AppShell.tsx";
 import GoldListPage from "./routes/golds/list.page.tsx";
 import ToastI18nProvider from "./components/ToastI18nProvider.tsx";
 import "./styles/globals.css";
+import GoldCreatePage from "./routes/golds/create.page.tsx";
 
 // ✅ React Query ใช้จัดการ server-state / cache API
 const qc = new QueryClient();
@@ -37,10 +38,8 @@ createRoot(document.getElementById("root")!).render(
           <ToastI18nProvider /> {/* ✅ ใช้ตัวที่ผูกกับ i18n */}
           {/* กำหนดเส้นทางหน้า (routes) */}
           <Routes>
-            {/* <Route path="/golds" element={<GoldListPage />} /> */}
-
-            {/* ✅ ใหม่: รายการวัตถุดิบ -> ทอง (ใช้หน้า list เดิมไปก่อน) */}
-            <Route path="/materials/gold" element={<GoldListPage />} />
+            <Route path="/materials/golds" element={<GoldListPage />} />
+            <Route path="/materials/golds/new" element={<GoldCreatePage />} />
 
             {/* ✅ route อื่นที่ไม่รู้จัก → ส่งกลับ /golds */}
             <Route

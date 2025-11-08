@@ -5,7 +5,7 @@ export default function Pagination({
   limit,
   total = 0,
   onPageChange,
-  onLimitChange // (ถ้าจะมีตัวเลือกต่อหน้า)
+  onLimitChange, // (ถ้าจะมีตัวเลือกต่อหน้า)
 }: {
   page: number;
   limit: number;
@@ -23,8 +23,11 @@ export default function Pagination({
   return (
     <div className="mt-3 flex flex-col items-start justify-between gap-3 text-sm md:flex-row md:items-center">
       <div className="text-gray-600">
-        {t("pagination.showing")} <span className="font-medium">{start}-{end}</span> {t("pagination.of")}{" "}
-        <span className="font-medium">{total ?? 0}</span>
+        {t("pagination.showing")}{" "}
+        <span className="font-medium">
+          {start}-{end}
+        </span>{" "}
+        {t("pagination.of")} <span className="font-medium">{total ?? 0}</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -36,7 +39,11 @@ export default function Pagination({
               value={limit}
               onChange={(e) => onLimitChange?.(Number(e.target.value))}
             >
-              {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+              {[5, 10, 25, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
             </select>
           </label>
         )}

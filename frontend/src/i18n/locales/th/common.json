@@ -27,6 +27,7 @@
   "form.remarks": "หมายเหตุ",
   "form.reset": "ล้างค่า",
   "form.save": "บันทึก",
+  "form.category": "หมวดหมู่",
   "modal.delete.title": "ยืนยันการลบ",
   "modal.delete.desc": "ต้องการลบรายการนี้หรือไม่? การลบไม่สามารถย้อนกลับได้",
   "modal.confirm": "ลบ",
@@ -55,5 +56,28 @@
   "crumb.products": "สินค้า",
   "toast.saved": "บันทึกสำเร็จ",
   "toast.failed": "เกิดข้อผิดพลาด",
-  "actions.add": "เพิ่มรายการ"
+  "actions.add": "เพิ่มรายการ",
+  "header": {
+    "main_title": "BB‑Gold — ธุรกรรม",
+    "material_report": "รายงานสินค้า/วัตถุดิบ"
+  },
+  "validation": {
+    "required": "กรุณากรอกข้อมูล",
+    "weight": {
+      "positive": "น้ำหนักต้องมากกว่า 0"
+    },
+    "date": {
+      "invalidFormat": "รูปแบบวันที่ไม่ถูกต้อง",
+      "future": "วันที่ห้ามเป็นอนาคต",
+      "tooOld": "ห้ามเก่ากว่าวันที่ {{date}}"
+    },
+    "loss": {
+      "range": "ต้องอยู่ระหว่าง 0% ถึง 100%",
+      "invalidFormat": "รูปแบบเปอร์เซ็นต์ไม่ถูกต้อง"
+    }
+  },
+  "form": {
+    "saving": "กำลังบันทึก...",
+    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)"
+  }
 }

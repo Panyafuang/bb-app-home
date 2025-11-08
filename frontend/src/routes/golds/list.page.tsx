@@ -18,7 +18,7 @@ export default function GoldListPage() {
 
   const { data, isLoading, filters, setFilters, refetch } = useGoldsQuery({
     page: 1,
-    limit: 5, // จำนวนต่อหน้าเริ่มต้น
+    limit: 50, // จำนวนต่อหน้าเริ่มต้น
   });
   const rows = Array.isArray(data) ? data : data?.items ?? [];
   const page = data?.page ?? filters.page ?? 1;
@@ -27,6 +27,12 @@ export default function GoldListPage() {
 
   return (
     <div className="space-y-4">
+      <div className="mb-6 flex items-center justify-between">
+        {/* ส่วนที่แก้ไข: เพิ่มหัวข้อ รายงานสินค้า/วัตถุดิบ */}
+        <h1 className="text-2xl font-semibold">
+          <span className="text-blue-700">{t("header.material_report")}</span>
+        </h1>
+      </div>
       {/* <Breadcrumbs /> */}
 
       {/* แถวบน: breadcrumb ซ้าย + ปุ่มเพิ่มขวา */}
@@ -41,7 +47,7 @@ export default function GoldListPage() {
 
         {/* ปุ่ม “เพิ่มรายการ” */}
         <Link
-          to="/golds/create"
+          to="/materials/golds/new"
           className="inline-flex items-center text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
         >
           + {t("actions.add")}

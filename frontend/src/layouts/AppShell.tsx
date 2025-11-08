@@ -62,7 +62,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         >
           {/* กล่องกำหนดความกว้างสูงสุดของคอนเทนต์ */}
           <div className="w-full max-w-screen-2xl">
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
               {children}
             </div>
           </div>
