@@ -141,3 +141,21 @@ export async function removeGold(id: string): Promise<boolean> {
   log("Transaction complete for id=%s", id);
   return success;
 }
+
+/**
+ * (เพิ่มฟังก์ชันนี้)
+ * ตรวจสอบว่า reference unique (ไม่ซ้ำ) หรือไม่
+ * @param reference
+ * @returns true ถ้า "ไม่ซ้ำ" (Unique), false ถ้า "ซ้ำ"
+ */
+export async function isReferenceUnique(reference: string): Promise<boolean> {
+  log("isReferenceUnique reference=%s", reference);
+
+  if (!reference) {
+    throw AppError.invalidInput([
+      { field: "reference", message: "Reference is required" },
+    ]);
+  }
+  const exists = await goldsRepo.checkReferenceExists(reference);
+  return !exists; // คืนค่า true ถ้า "ไม่ซ้ำ"
+}

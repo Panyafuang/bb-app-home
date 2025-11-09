@@ -9,6 +9,9 @@ import { validateRequest } from "../middlewares/validate-request";
 const router = Router();
 const CATEGORY_LIST = ["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"];
 
+// GET: /api/v1/gold_records/check-unique?reference=<REFERENCE NUM>
+router.get("/check-unique", goldsController.checkUnique);
+
 // GET: /api/v1/gold_records?page&limit
 router.get(
     "/",

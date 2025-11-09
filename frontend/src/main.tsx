@@ -18,6 +18,7 @@ import GoldListPage from "./routes/golds/list.page.tsx";
 import ToastI18nProvider from "./components/ToastI18nProvider.tsx";
 import "./styles/globals.css";
 import GoldCreatePage from "./routes/golds/create.page.tsx";
+import GoldEditPage from "./routes/golds/edit.page.tsx";
 
 // ✅ React Query ใช้จัดการ server-state / cache API
 const qc = new QueryClient();
@@ -26,7 +27,6 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={qc}>
       <BrowserRouter>
-        {/* Layout หลัก ครอบทุกหน้า */}
         <AppShell>
           {/* ✅ Toast แจ้งเตือน CRUD หรือ error */}
           {/* <ToastContainer
@@ -40,11 +40,12 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/materials/golds" element={<GoldListPage />} />
             <Route path="/materials/golds/new" element={<GoldCreatePage />} />
-
+            <Route path="/materials/golds/edit/:id" element={<GoldEditPage />} />
+            
             {/* ✅ route อื่นที่ไม่รู้จัก → ส่งกลับ /golds */}
             <Route
               path="*"
-              element={<Navigate to="/materials/gold" replace />}
+              element={<Navigate to="/materials/golds" replace />}
             />
           </Routes>
         </AppShell>

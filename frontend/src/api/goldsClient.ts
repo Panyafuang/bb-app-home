@@ -1,6 +1,12 @@
 import { api } from "@/lib/axios";
-import type { CreateGoldDTO, UpdateGoldDTO, ListParams, GoldRecord, ApiListResponse } from "@/features/golds/types";
-
+import type {
+  CreateGoldDTO,
+  UpdateGoldDTO,
+  ListParams,
+  GoldRecord,
+  ApiListResponse,
+  ApiResponse,
+} from "@/features/golds/types";
 
 const BASE = "/api/v1/gold_records";
 
@@ -17,7 +23,9 @@ function toQS(params: Record<string, any>) {
 
 /** ปรับให้ดึง items ที่อยู่ใน data.data.items */
 export async function listGolds(params: ListParams = {}) {
-  const { data } = await api.get<ApiListResponse<GoldRecord>>(`${BASE}${toQS(params)}`);
+  const { data } = await api.get<ApiListResponse<GoldRecord>>(
+    `${BASE}${toQS(params)}`
+  );
 
   // 🔍 ตรวจสอบว่าโครงสร้างมีชั้น data ซ้อน
   const items = data?.data?.items ?? [];
@@ -39,4 +47,32 @@ export async function deleteGold(id: string) {
 export async function createGold(payload: CreateGoldDTO) {
   const { data } = await api.post<GoldRecord>(BASE, payload);
   return data;
+}
+
+export async function getGold(id: string) {
+  const { data } = await api.get<ApiResponse>(`${BASE}/${id}`);
+  return data.data;
+}
+
+export async function updateGold(id: string, payload: UpdateGoldDTO) {
+  const { data } = await api.put<GoldRecord>(`${BASE}/${id}`, payload);
+  return data;
+}
+
+/**
+ * (เพิ่มฟังก์ชันนี้)
+ * ตรวจสอบว่า Reference ซ้ำหรือไม่
+ * @returns true ถ้า "ไม่ซ้ำ" (Unique)
+ */
+export async function checkRefUnique(reference: string) {
+  // สร้าง query string
+  const params = { reference };
+  
+  // API จะคืน { data: { isUnique: boolean } }
+  // (เราต้องแกะ .data สองชั้น ตามโครงสร้าง API ของคุณ)
+  const { data } = await api.get<{ data: { isUnique: boolean } }>(
+    `${BASE}/check-unique${toQS(params)}`
+  );
+  
+  return data.data.isUnique; // คืนค่า true ถ้า "ไม่ซ้ำ"
 }

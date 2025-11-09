@@ -1,8 +1,9 @@
-// หมายเหตุ: ทำเวอร์ชันง่ายก่อน (useState) — ภายหลังอัปเกรดเป็น react-hook-form + zod ได้
-import { useState, useMemo, useEffect } from "react"; // 1. Import useEffect
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-// --- TODO: เพิ่มค่าคงที่และฟังก์ชัน Helpers (นอก Component) ---
+import { checkRefUnique as apiCheckRefUnique } from "@/api/goldsClient";
+
+// --- 1. Constants & Helpers (นอก Component) ---
 const LEDGERS = [
   "Beauty Bijoux",
   "Green Gold",
@@ -33,12 +34,10 @@ function getTodayISO() {
 
 /** (Helper) แปลงค่าตัวเลขอย่างปลอดภัย */
 const parseNumber = (v: any): number | null => {
-  if (v == null || v === "") return null; // อนุญาตสตริงว่าง
+  if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
 };
-
-// --- เพิ่ม Helpers สำหรับ Calculated Loss (ตาม Spec) ---
 
 /** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
 function toDecimalFromPercentInput(str: string): number | null {
@@ -47,7 +46,6 @@ function toDecimalFromPercentInput(str: string): number | null {
   if (s === "") return null;
   const n = Number(s);
   if (Number.isNaN(n)) return null;
-
   // ถ้าผู้ใช้พิมพ์ค่ามากกว่า 1 (เช่น 6) ให้หาร 100
   // ถ้าผู้ใช้พิมพ์ค่าน้อยกว่า 1 (เช่น 0.06) ให้ใช้ค่านั้นเลย
   return n > 1 ? n / 100 : n;
@@ -61,11 +59,24 @@ function inferCalculatedLoss(ledger: string, reference: string): number | null {
 
   if (ledger === "Beauty Bijoux") {
     if (isRefining) return 0.0;
-    if (isExport) return 0.10;
+    if (isExport) return 0.1;
   }
   return null; // Ledgers อื่นๆ ให้เป็นค่าว่าง
 }
-// --- จบส่วน Helpers ---
+
+/** (Helper) ตรวจสอบ Reference Unique (เชื่อม API จริง) */
+async function checkReferenceUnique(reference: string): Promise<boolean> {
+  try {
+    // เรียก API client ที่เราสร้างในขั้นตอน 2.1
+    // (true = unique, false = exists)
+    const isUnique = await apiCheckRefUnique(reference);
+    return isUnique;
+  } catch (error) {
+    // ถ้า API error, เพื่อความปลอดภัย ให้ถือว่า "ซ้ำ" (false)
+    console.error("Failed to check reference uniqueness", error);
+    return false;
+  }
+}
 
 export default function GoldForm({
   mode,
@@ -78,7 +89,7 @@ export default function GoldForm({
 }) {
   const { t } = useTranslation("common");
 
-  // สร้าง state จาก defaultValues (ถ้ามี)
+  // ✅ 1. State ของฟอร์ม
   const [date, setDate] = useState<string>(
     defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO()
   );
@@ -104,9 +115,8 @@ export default function GoldForm({
   const [remarks, setRemarks] = useState(defaultValues?.remarks || "");
   const [category, setCategory] = useState(defaultValues?.category || "");
 
-  // --- 3. อัปเดต State สำหรับ Calculated Loss (ให้เก็บเป็น Display String) ---
+  // --- State สำหรับ Calculated Loss (ตาม Spec) ---
   const [calculatedLoss, setCalculatedLoss] = useState(() => {
-    // แปลง Decimal (0.06) จาก DB มาเป็น String ("6.00") เพื่อแสดงผล
     if (
       defaultValues?.calculated_loss === null ||
       defaultValues?.calculated_loss === undefined
@@ -115,77 +125,117 @@ export default function GoldForm({
     }
     return (Number(defaultValues.calculated_loss) * 100).toFixed(2);
   });
-  // State เพื่อติดตามว่าผู้ใช้ได้แก้ไขฟิลด์นี้เองหรือยัง (เพื่อหยุด Auto-fill)
   const [lossManuallySet, setLossManuallySet] = useState(mode === "edit");
 
-  // --- State สำหรับจัดการ Validation ---
+  // --- State สำหรับ Validation ---
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showErrors, setShowErrors] = useState(false); // State เพื่อบอกว่า "ให้เริ่มแสดง Error ได้"
+  const [showErrors, setShowErrors] = useState(false);
+  const [refUnique, setRefUnique] = useState<boolean | null>(
+    mode === "edit" ? true : null
+  );
+  const [checkingRef, setCheckingRef] = useState(false);
 
-  // --- เพิ่ม Auto-fill Logic (useEffect) ---
+  // ✅ 2. Derived State (สำหรับ Net Gold Read-only)
+  const weightNum = useMemo(() => {
+    if (weight === "") return NaN;
+    const n = Number(weight);
+    return Number.isFinite(n) ? n : NaN;
+  }, [weight]);
+
+  const netGold = useMemo(() => {
+    if (!direction || Number.isNaN(weightNum)) return 0;
+    return direction === "IN" ? weightNum : -weightNum;
+  }, [direction, weightNum]);
+
+  const goldIn =
+    direction === "IN" ? (Number.isNaN(weightNum) ? 0 : weightNum) : 0;
+  const goldOut =
+    direction === "OUT" ? (Number.isNaN(weightNum) ? 0 : weightNum) : 0;
+
+  // ✅ 3. Effects (Auto-fill Loss & Check Reference)
   useEffect(() => {
-    // ถ้าผู้ใช้พิมพ์เองแล้ว หรืออยู่ในโหมด Edit ให้หยุด
     if (lossManuallySet) return;
-
     const inferredDecimal = inferCalculatedLoss(ledger, reference);
     if (inferredDecimal !== null) {
-      // Auto-fill ค่าที่ได้ (เช่น 0.10) เป็น Display String ("10.00")
       setCalculatedLoss((inferredDecimal * 100).toFixed(2));
-    } else {
-      // ถ้าเปลี่ยน Ledger แล้วไม่มีกฎ ให้ล้างค่า (ถ้ายังไม่ถูกพิมพ์)
+    } else if (!lossManuallySet) {
       setCalculatedLoss("");
     }
-  }, [ledger, reference, lossManuallySet]); // ทำงานเมื่อ Ledger หรือ Reference เปลี่ยน
+  }, [ledger, reference, lossManuallySet]);
 
-  // สร้าง Error Object แบบ Real-time
+  useEffect(() => {
+    if (mode === "edit") return; // ไม่เช็ค Unique ถ้าเป็นโหมด Edit
+    if (!reference) {
+      setRefUnique(null);
+      return;
+    }
+    const id = setTimeout(async () => {
+      setCheckingRef(true);
+      try {
+        const ok = await checkReferenceUnique(reference);
+        setRefUnique(ok);
+      } finally {
+        setCheckingRef(false);
+      }
+    }, 350);
+    return () => clearTimeout(id);
+  }, [reference, mode]);
+
+  // ✅ 4. Validation Logic (useMemo)
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     const today = getTodayISO();
 
-    if (date.trim() === "") {
-      e.date = t("validation.required");
-    } else if (!isValidIsoDate(date)) {
-      e.date = t("validation.date.invalidFormat");
-    } else if (date > today) {
-      e.date = t("validation.date.future");
-    } else if (date < COMPANY_FOUNDED) {
+    // Date
+    if (date.trim() === "") e.date = t("validation.required");
+    else if (!isValidIsoDate(date)) e.date = t("validation.date.invalidFormat");
+    else if (date > today) e.date = t("validation.date.future");
+    else if (date < COMPANY_FOUNDED)
       e.date = t("validation.date.tooOld", { date: "11/03/1991" });
-    }
 
+    // Reference
     if (reference.trim() === "") e.reference = t("validation.required");
-    if (direction === "") e.direction = t("validation.required");
-    if (weight.trim() === "") e.weight = t("validation.required");
-    else if (Number(weight) <= 0) e.weight = t("validation.weight.positive");
-    if (category.trim() === "") e.category = t("validation.required");
+    else if (reference.length > 100)
+      e.reference = t("validation.ref.maxLength");
+    else if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference))
+      e.reference = t("validation.ref.pattern");
+    // else if (refUnique === false) e.reference = t("validation.ref.exists");
 
-    // --- อัปเดต Validation สำหรับ Calculated Loss (ตาม Spec) ---
+    // Direction
+    if (direction === "") e.direction = t("validation.required");
+
+    // Weight
+    const w = Number(weight);
+    if (weight.trim() === "") e.weight = t("validation.required");
+    else if (w <= 0) e.weight = t("validation.weight.positive");
+    else if (w > 9999999.999) e.weight = t("validation.weight.max");
+
+    // Calculated Loss
     if (calculatedLoss.trim() !== "") {
       const dec = toDecimalFromPercentInput(calculatedLoss);
-      if (dec === null) {
-        e.calculated_loss = t("validation.loss.invalidFormat"); // "Invalid percentage format"
-      } else if (dec < 0 || dec > 1) {
-        e.calculated_loss = t("validation.loss.range"); // "between 0% and 100%"
-      }
+      if (dec === null) e.calculated_loss = t("validation.loss.invalidFormat");
+      else if (dec < 0 || dec > 1)
+        e.calculated_loss = t("validation.loss.range");
     }
 
+    // Category (Required)
+    if (category.trim() === "") e.category = t("validation.required");
+
     return e;
-  }, [date, reference, direction, weight, category, calculatedLoss, t]); // <-- เพิ่ม calculatedLoss และ t
+  }, [date, reference, direction, weight, category, calculatedLoss, t]);
 
   // ตรวจสอบว่าฟอร์มพร้อมส่งหรือไม่
-  const canSubmit = Object.keys(errors).length === 0;
+  const canSubmit = Object.keys(errors).length === 0 && !checkingRef && refUnique !== false; // <-- ✅ 1. แก้ไข canSubmit (เอา refUnique ออกจาก errors)
 
-
+  // --- 💅 CSS Classes (ไม่เปลี่ยนแปลง) ---
   const inputStyle =
     "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
   const errorStyle = "border-red-500 ring-2 ring-red-100 border-2";
 
-
-  // 8. อัปเดตฟังก์ชัน Reset
+  // ✅ 5. อัปเดตฟังก์ชัน Reset
   function handleReset() {
-    setShowErrors(false); // ซ่อน Error
-    setDate(
-      defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO()
-    );
+    setShowErrors(false);
+    setDate(defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO());
     setReference(defaultValues?.reference_number || "");
     setDirection(
       defaultValues
@@ -206,17 +256,21 @@ export default function GoldForm({
     setRemarks(defaultValues?.remarks || "");
     setCategory(defaultValues?.category || "");
 
-    // รีเซ็ต Calculated Loss กลับไปเป็นค่าเริ่มต้น
+    // รีเซ็ต Calculated Loss
     const defaultLoss =
       defaultValues?.calculated_loss === null ||
       defaultValues?.calculated_loss === undefined
         ? ""
         : (Number(defaultValues.calculated_loss) * 100).toFixed(2);
     setCalculatedLoss(defaultLoss);
-    setLossManuallySet(mode === "edit"); // ถ้าเป็นโหมด Edit ให้ถือว่า Manual (ไม่ Auto-fill)
+    setLossManuallySet(mode === "edit");
+
+    // รีเซ็ต Reference
+    setRefUnique(mode === "edit" ? true : null);
+    setCheckingRef(false);
   }
 
-  // 9. อัปเดตฟังก์ชัน Submit
+  // ✅ 6. อัปเดตฟังก์ชัน Submit
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -250,14 +304,13 @@ export default function GoldForm({
         details: details || null,
         gold_in_grams,
         gold_out_grams,
-        ledger: ledger || null,
+        ledger: ledger || null, // (ส่ง null ถ้าว่าง)
         remarks: remarks || null,
-        category: category || null, // แก้ไขจากโค้ดเดิมของคุณ
-        calculated_loss: decimalLoss, // ส่ง Decimal หรือ null
+        category: category || null, // (ส่ง null ถ้าว่าง)
+        calculated_loss: decimalLoss,
       };
       await onSubmit(dto);
 
-      // รีเซ็ตฟอร์มเฉพาะโหมด 'create'
       if (mode === "create") {
         handleReset();
       }
@@ -279,7 +332,8 @@ export default function GoldForm({
       onSubmit={submit}
       className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-12"
     >
-      <div className="md:col-span-2">
+      {/* Date */}
+      <div className="md:col-span-3">
         <label className="block text-sm font-medium">
           {t("form.date")}
           <span className="text-red-600"> *</span>
@@ -297,22 +351,41 @@ export default function GoldForm({
         <ErrorMessage field="date" />
       </div>
 
-      <div className="md:col-span-4">
+      {/* Reference */}
+      <div className="md:col-span-3">
         <label className="block text-sm font-medium">
           {t("form.reference")}
           <span className="text-red-600"> *</span>
         </label>
         <input
           className={`${inputStyle} ${
-            showErrors && errors.reference ? errorStyle : ""
+            (showErrors && errors.reference) || refUnique === false
+              ? errorStyle
+              : ""
           }`}
           value={reference}
           onChange={(e) => setReference(e.target.value)}
           placeholder="INV-2025/BB-001"
+          maxLength={100} // <-- Spec: Max length 100
         />
-        <ErrorMessage field="reference" />
+        {/* Feedback การเช็ค Unique */}
+        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+          {checkingRef && <span className="animate-pulse">• checking…</span>}
+          {refUnique && reference && !checkingRef && (
+            <span className="text-green-600">✓ looks unique</span>
+          )}
+        </div>
+        {/* (แก้ไข) แสดง Error ทันทีถ้าซ้ำ */}
+        {showErrors && errors.reference ? (
+          <ErrorMessage field="reference" />
+        ) : refUnique === false ? (
+          <p className="mt-1 text-sm text-red-600">
+            {t("validation.ref.exists")}
+          </p>
+        ) : null}
       </div>
 
+      {/* Direction */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {t("form.direction")}
@@ -322,7 +395,7 @@ export default function GoldForm({
           <button
             type="button"
             onClick={() => setDirection("IN")}
-            className={`flex-1 rounded-xl border border-gray-300 p-2 text-sm ${
+            className={`flex-1 rounded-xl border border-gray-300 p-2 ${
               direction === "IN"
                 ? "border-green-600 ring-2 ring-green-200"
                 : "hover:bg-gray-50"
@@ -333,7 +406,7 @@ export default function GoldForm({
           <button
             type="button"
             onClick={() => setDirection("OUT")}
-            className={`flex-1 rounded-xl border border-gray-300 p-2 text-sm ${
+            className={`flex-1 rounded-xl border border-gray-300 p-2 ${
               direction === "OUT"
                 ? "border-red-600 ring-2 ring-red-200"
                 : "hover:bg-gray-50"
@@ -345,9 +418,15 @@ export default function GoldForm({
         <ErrorMessage field="direction" />
       </div>
 
+      {/* Weight (Dynamic Label) */}
       <div className="md:col-span-2">
+        {/* Spec: Dynamic Label */}
         <label className="block text-sm font-medium">
-          {t("form.weight")}
+          {direction === "OUT"
+            ? t("form.weight_sent")
+            : direction === "IN"
+            ? t("form.weight_received")
+            : t("form.weight")}
           <span className="text-red-600"> *</span>
         </label>
         <input
@@ -362,29 +441,34 @@ export default function GoldForm({
         <ErrorMessage field="weight" />
       </div>
 
+      {/* Calculated Loss (UI %%) */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {t("form.calculated_loss")}
         </label>
         <input
-          type="text" // 1. เปลี่ยนเป็น "text"
+          type="text" // Spec: UI as %
           className={`${inputStyle} ${
             showErrors && errors.calculated_loss ? errorStyle : ""
           }`}
           value={calculatedLoss}
           onChange={(e) => {
             setCalculatedLoss(e.target.value);
-            setLossManuallySet(true); // 2. ผู้ใช้พิมพ์เองแล้ว
+            setLossManuallySet(true); // Spec: Manual override
           }}
-          placeholder="e.g. 6% or 0.06" // 3. อัปเดต placeholder
+          placeholder="e.g. 6% or 0.06"
         />
         <ErrorMessage field="calculated_loss" />
       </div>
 
+      {/* ✅ 2. Ledger (แก้ไข) */}
       <div className="md:col-span-3">
-        <label className="block text-sm font-medium">{t("form.ledger")}</label>
+        <label className="block text-sm font-medium">
+          {t("form.ledger")}
+          {/* <span className="text-red-600"> *</span> */} {/* <-- ลบ * สีแดง */}
+        </label>
         <select
-          className={inputStyle}
+          className={inputStyle} // <-- ลบตรรกะ Error
           value={ledger}
           onChange={(e) => setLedger(e.target.value)}
         >
@@ -395,8 +479,10 @@ export default function GoldForm({
             </option>
           ))}
         </select>
+        {/* <ErrorMessage field="ledger" /> */} {/* <-- ลบ Error Message */}
       </div>
 
+      {/* Category (Required) */}
       <div className="md:col-span-3">
         <label className="block text-sm font-medium">
           {t("form.category")}
@@ -419,6 +505,7 @@ export default function GoldForm({
         <ErrorMessage field="category" />
       </div>
 
+      {/* Details */}
       <div className="md:col-span-6">
         <label className="block text-sm font-medium">{t("form.details")}</label>
         <input
@@ -428,6 +515,7 @@ export default function GoldForm({
         />
       </div>
 
+      {/* Remarks */}
       <div className="md:col-span-6">
         <label className="block text-sm font-medium">{t("form.remarks")}</label>
         <textarea
@@ -438,6 +526,31 @@ export default function GoldForm({
         />
       </div>
 
+      {/* Net Gold Read-only */}
+      <div className="md:col-span-12">
+        <label className="block text-sm font-medium">
+          {t("form.net_gold")} (Read-only)
+        </label>
+        <div
+          className={`rounded-md p-3 text-sm ${
+            netGold === 0
+              ? "bg-gray-100 text-gray-800"
+              : netGold < 0
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+          }`}
+        >
+          <span className="font-semibold">
+            {netGold >= 0 ? "+" : ""}
+            {Number.isNaN(netGold) ? "0.000" : netGold.toFixed(3)} g
+          </span>
+          <span className="ml-4 text-gray-500">
+            (IN: {goldIn.toFixed(3)} g • OUT: {goldOut.toFixed(3)} g)
+          </span>
+        </div>
+      </div>
+
+      {/* Buttons */}
       <div className="md:col-span-12 flex justify-end gap-2">
         <button
           type="button"
@@ -446,6 +559,18 @@ export default function GoldForm({
         >
           {t("form.reset")}
         </button>
+        {/* <button
+          type="submit"
+          // disabled={!canSubmit || isSubmitting} // Disable ถ้าไม่ Valid หรือกำลังส่ง
+          className={`rounded-lg px-4 py-2 text-white text-sm ${
+            !canSubmit || isSubmitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {isSubmitting ? t("form.saving") : t("form.save")}
+        </button> */}
+
         <button
           type="submit"
           disabled={isSubmitting} // Req 1: Disable ปุ่มขณะกำลังบันทึก

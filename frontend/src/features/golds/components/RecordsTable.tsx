@@ -1,13 +1,8 @@
-/**
- * features/golds/components/RecordsTable.tsx
- * ตารางแสดงรายการทอง:
- * - แสดง skeleton ระหว่างโหลด
- * - ปุ่มลบพร้อม Modal ยืนยัน
- * - ลบสำเร็จเรียก onDeleted() เพื่อให้หน้าหลัก refetch
- */
 import { FiTrash2 } from "react-icons/fi";
+import { FiEdit } from "react-icons/fi";
 import { useTranslation } from "react-i18next"; // Hook สำหรับการแปลภาษา
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Modal from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -36,6 +31,7 @@ export default function RecordsTable({
   // เก็บ ID ของรายการที่ผู้ใช้เลือกกดปุ่มลบ
   const [targetId, setTargetId] = useState<string | null>(null);
   const { t, i18n } = useTranslation("common");
+  const navigate = useNavigate();
 
   /** ฟังก์ชันการลบ (Business Logic) */
   const doDelete = async () => {
@@ -140,12 +136,20 @@ export default function RecordsTable({
                   <td className="px-6 py-4">
                     <div className="flex justify-end">
                       <button
+                        title={t("table.edit") || "Edit"}
+                       onClick={() => navigate(`/materials/golds/edit/${r.id}`)}
+                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 mr-2"
+                      >
+                        <FiEdit />
+                      </button>
+                      <button
                         title={t("modal.confirm")}
                         onClick={() => setTargetId(r.id)}
                         className="rounded-lg p-2 text-red-600 hover:bg-red-50"
                       >
                         <FiTrash2 />
                       </button>
+
                     </div>
                   </td>
                 </tr>

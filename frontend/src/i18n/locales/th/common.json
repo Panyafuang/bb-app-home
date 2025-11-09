@@ -1,4 +1,7 @@
 {
+  "utils": {
+    "loading": "กำลังโหลดข้อมูล..."
+  },
   "app.title": "BB-Gold",
   "nav.list": "รายการ",
   "nav.create": "เพิ่มใหม่",
@@ -16,18 +19,7 @@
   "table.empty": "ไม่พบข้อมูล",
   "table.details": "รายละเอียด",
   "table.remarks": "หมายเหตุ",
-  "form.date": "วันที่",
-  "form.reference": "เลขอ้างอิง",
-  "form.direction": "ทิศทาง",
-  "form.in": "↓ รับเข้า",
-  "form.out": "↑ จ่ายออก",
-  "form.weight": "น้ำหนัก (กรัม)",
-  "form.ledger": "หมวดบัญชี",
-  "form.details": "รายละเอียด",
-  "form.remarks": "หมายเหตุ",
-  "form.reset": "ล้างค่า",
-  "form.save": "บันทึก",
-  "form.category": "หมวดหมู่",
+  "table.edit": "แก้ไข",
   "modal.delete.title": "ยืนยันการลบ",
   "modal.delete.desc": "ต้องการลบรายการนี้หรือไม่? การลบไม่สามารถย้อนกลับได้",
   "modal.confirm": "ลบ",
@@ -57,6 +49,7 @@
   "toast.saved": "บันทึกสำเร็จ",
   "toast.failed": "เกิดข้อผิดพลาด",
   "actions.add": "เพิ่มรายการ",
+  "actions.edit": "แก้ไขรายการ",
   "header": {
     "main_title": "BB‑Gold — ธุรกรรม",
     "material_report": "รายงานสินค้า/วัตถุดิบ"
@@ -64,7 +57,8 @@
   "validation": {
     "required": "กรุณากรอกข้อมูล",
     "weight": {
-      "positive": "น้ำหนักต้องมากกว่า 0"
+      "positive": "น้ำหนักต้องมากกว่า 0",
+      "max": "น้ำหนักห้ามเกิน 9,999,999.999"
     },
     "date": {
       "invalidFormat": "รูปแบบวันที่ไม่ถูกต้อง",
@@ -74,10 +68,30 @@
     "loss": {
       "range": "ต้องอยู่ระหว่าง 0% ถึง 100%",
       "invalidFormat": "รูปแบบเปอร์เซ็นต์ไม่ถูกต้อง"
+    },
+    "ref": {
+      "maxLength": "ห้ามเกิน 100 ตัวอักษร",
+      "pattern": "ใช้ได้เฉพาะตัวอักษร, ตัวเลข, -, _, /, และเว้นวรรค",
+      "exists": "เลขอ้างอิงนี้ถูกใช้แล้ว"
     }
   },
   "form": {
     "saving": "กำลังบันทึก...",
-    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)"
+    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)",
+    "save": "บันทึก",
+    "reset": "ล้างค่า",
+    "date": "วันที่",
+    "reference": "เลขอ้างอิง",
+    "direction": "ทิศทาง",
+    "in": "↓ IN",
+    "out": "↑ OUT",
+    "weight": "น้ำหนัก (g)",
+    "weight_sent": "ทองที่ส่ง (g)",
+    "weight_received": "ทองที่รับ (g)",
+    "ledger": "หมวดบัญชี",
+    "category": "หมวดหมู่",
+    "details": "รายละเอียด",
+    "remarks": "หมายเหตุ",
+    "net_gold": "ทองสุทธิ"
   }
 }

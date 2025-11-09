@@ -278,3 +278,19 @@ export async function deleteGold(
   }
   return success;
 }
+
+/**
+ * (เพิ่มฟังก์ชันนี้)
+ * ตรวจสอบว่า reference_number นี้มีอยู่ในฐานข้อมูลหรือไม่
+ * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
+ * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
+ */
+export async function checkReferenceExists(reference: string): Promise<boolean> {
+  log("checkReferenceExists reference=%s", reference);
+  const res = await pool.query(
+    `SELECT 1 FROM gold_record WHERE reference_number = $1 LIMIT 1`,
+    [reference]
+  );
+  // rowCount can be null in some typings/environments; coalesce to 0 before comparison
+  return (res.rowCount ?? 0) > 0;
+}
