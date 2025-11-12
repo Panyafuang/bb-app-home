@@ -24,7 +24,12 @@ A comprehensive gold inventory and bookkeeping system designed for jewelry manuf
 | `id` | UUID | Primary key (auto-generated) |
 | `timestamp_tz` | TIMESTAMP WITH TIME ZONE | Transaction timestamp |
 | `reference_number` | VARCHAR(100) | Unique reference number |
+| `related_reference_number` | VARCHAR(100) | Unique reference number previously existing |
+| `entity` | TEXT | Supplier or customer |
+| `karat` | TEXT | Gold karat of the good |
 | `details` | TEXT | Transaction details |
+| `status` | TEXT | Purchased/Received (import) or Invoiced/Returned (export) |
+| `agent` | TEXT | Shipping agent |
 | `gold_in_grams` | NUMERIC(10,3) | Gold weight in grams (up to 3 decimal places) |
 | `gold_out_grams` | NUMERIC(10,3) | Gold weight out in grams (default: 0) |
 | `net_gold_grams` | NUMERIC(10,3) | Calculated net gold (gold_in - gold_out) |

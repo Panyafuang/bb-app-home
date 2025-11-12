@@ -5,9 +5,122 @@ import { body, param, query } from "express-validator";
 
 import * as goldsController from "../controllers/golds.controller";
 import { validateRequest } from "../middlewares/validate-request";
+import { LEDGER_LIST } from "../types/golds";
 
 const router = Router();
-const CATEGORY_LIST = ["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"];
+
+const STATUS_LIST_IN = ['purchased', 'received'];
+const STATUS_LIST_OUT = ['invoiced', 'returned'];
+const FINENESS_GOLD = ['8K', '9K', '10K', '18K', '22K', '23K', '24K', 'Other'];
+const FINENESS_PALLADIUM = ['14%', '95%', 'Other'];
+const FINENESS_PLATINUM = ['14%', '95%', 'Other'];
+
+const getGoldsValidation = [
+    query("page").optional().toInt().isInt({ min: 1 }).withMessage("page must be >= 1"),
+    query("limit").optional().toInt().isInt({ min: 1, max: 100 }).withMessage("limit must be 1..100"),
+    query("offset").optional().toInt().isInt({ min: 0 }).withMessage("offset must be >= 0"),
+
+    query("from").optional().isISO8601().withMessage("from must be ISO8601").toDate(),
+    query("to").optional().isISO8601().withMessage("to must be ISO8601").toDate(),
+
+    // (ฟิลด์ค้นหาใหม่)
+    query("reference_number").optional().trim().isString(),
+    query("ledger").optional().isIn(LEDGER_LIST).withMessage("invalid ledger"),
+    query("counterpart").optional().trim().isString(),
+    query("status").optional().trim().isString(),
+
+    query("gold_out_min").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_min must be >= 0"),
+    query("gold_out_max").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_max must be >= 0"),
+    query("net_gold_min").optional().toFloat().isFloat({ min: 0 }).withMessage("net_gold_min must be >= 0"),
+    query("net_gold_max").optional().toFloat().isFloat({ min: 0 }).withMessage("net_gold_max must be >= 0"),
+    query("calculated_loss").optional().toFloat().isFloat().withMessage("calculated_loss must be >= 0"),
+
+    query("sort")
+        .optional()
+        .isIn(["timestamp_tz:asc", "timestamp_tz:desc"])
+        .withMessage("sort must be 'timestamp_tz:asc' or 'timestamp_tz:desc'"),
+];
+
+const createGoldValidation = [
+    // (ฟิลด์บังคับ)
+    body("timestamp_tz").isISO8601().withMessage("timestamp_tz must be ISO8601").toDate(),
+    body("reference_number").trim().notEmpty().withMessage("reference_number is required"),
+    body("ledger").isIn(LEDGER_LIST).withMessage("ledger is required"),
+    // ถ้า IN -> gold_in_grams ถ้า OUT -> gold_out_grams
+    body("gold_in_grams").toFloat().isFloat({ min: 0 }).withMessage("gold_in_grams must be >= 0"),
+    body("gold_out_grams").toFloat().isFloat({ min: 0 }).withMessage("gold_out_grams must be >= 0"),
+
+    // (ฟิลด์ Optional)
+    body("related_reference_number").optional({ checkFalsy: true }).trim().isString(), // falsy (เช่น null, undefined, 0, "", false)
+    body("calculated_loss").optional({ checkFalsy: true }).toFloat().isFloat({ min: 0 }).withMessage("calculated_loss must be >= 0 (grams)"),
+    body("counterpart").optional({ checkFalsy: true }).trim().isString(),
+    body("good_details").optional({ checkFalsy: true }).trim().isString(),
+    body("shipping_agent").optional({ checkFalsy: true }).trim().isString(),
+    body("remarks").optional({ checkFalsy: true }).trim().isString(),
+    body("status").optional({ checkFalsy: true }).trim().isString(),
+
+    body("fineness").optional({ checkFalsy: true }).trim().isString()
+        .custom((value, { req }) => {
+            if (!value) return true; // ถ้าไม่ส่งมา (optional) ก็ถือว่าผ่าน
+            const ledger = req.body.ledger;
+
+            if (['Beauty Bijoux', 'Green Gold', 'PV Accessories', 'PV Fine Gold'].includes(ledger)) {
+                if (!FINENESS_GOLD.includes(value)) {
+                    throw new Error(`Invalid fineness '${value}' for Gold ledger. Must be one of: ${FINENESS_GOLD.join(', ')}`);
+                }
+            } else if (ledger === 'Palladium') {
+                if (!FINENESS_PALLADIUM.includes(value)) {
+                    throw new Error(`Invalid fineness '${value}' for Palladium ledger. Must be one of: ${FINENESS_PALLADIUM.join(', ')}`);
+                }
+            } else if (ledger === 'Platinum') {
+                if (!FINENESS_PLATINUM.includes(value)) {
+                    throw new Error(`Invalid fineness '${value}' for Platinum ledger. Must be one of: ${FINENESS_PLATINUM.join(', ')}`);
+                }
+            }
+            return true;
+        }),
+    body("status").optional({ checkFalsy: true }).trim().isString()
+        .custom((value, { req }) => {
+            if (!value) return true; // ถ้าไม่ส่งมา (optional) ก็ถือว่าผ่าน
+
+            // เราอ่านค่าที่ .toFloat() มาแล้ว
+            const goldIn = Number(req.body.gold_in_grams);
+            const goldOut = Number(req.body.gold_out_grams);
+
+            // Import
+            if (goldIn > 0 && goldOut === 0) {
+                if (!STATUS_LIST_IN.includes(value)) {
+                    throw new Error(`Invalid status '${value}'. For Imports (gold_in > 0), must be 'Purchased' or 'Received'.`);
+                }
+            // Export
+            } else if (goldOut > 0 && goldIn === 0) {
+                if (!STATUS_LIST_OUT.includes(value)) {
+                    throw new Error(`Invalid status '${value}'. For Exports (gold_out > 0), must be 'Invoiced' or 'Returned'.`);
+                }
+            }
+            return true;
+        }),
+];
+
+const updateGoldValidation = [
+  body("timestamp_tz").optional().isISO8601().toDate(),
+  body("reference_number").optional().trim().notEmpty(),
+  body("ledger").optional().isIn(LEDGER_LIST),
+  body("gold_in_grams").optional().toFloat().isFloat({ min: 0 }),
+  body("gold_out_grams").optional().toFloat().isFloat({ min: 0 }),
+  body("related_reference_number").optional({ checkFalsy: true }).trim().isString(),
+  body("calculated_loss").optional({ checkFalsy: true }).toFloat().isFloat({ min: 0 }),
+  body("counterpart").optional({ checkFalsy: true }).trim().isString(),
+  body("fineness").optional({ checkFalsy: true }).trim().isString(),
+  body("good_details").optional({ checkFalsy: true }).trim().isString(),
+  body("status").optional({ checkFalsy: true }).trim().isString(),
+  body("shipping_agent").optional({ checkFalsy: true }).trim().isString(),
+  body("remarks").optional({ checkFalsy: true }).trim().isString(),
+  // (หมายเหตุ: Logic .custom() ที่ซับซ้อนสำหรับ PUT นั้นทำได้ยาก
+  // เพราะเราไม่รู้ว่าค่าที่ไม่ได้ส่งมา (เช่น ledger) คือค่าอะไรใน DB
+  // เราจึงมักจะ Validate Logic ข้ามฟิลด์ (เช่น fineness vs ledger) ใน Service Layer สำหรับการ Update)
+];
+
 
 // GET: /api/v1/gold_records/check-unique?reference=<REFERENCE NUM>
 router.get("/check-unique", goldsController.checkUnique);
@@ -15,28 +128,7 @@ router.get("/check-unique", goldsController.checkUnique);
 // GET: /api/v1/gold_records?page&limit
 router.get(
     "/",
-    [
-        query("page").optional().toInt().isInt({ min: 1 }).withMessage("page must be >= 1"),
-        query("limit").optional().toInt().isInt({ min: 1, max: 100 }).withMessage("limit must be 1..100"),
-        query("offset").optional().toInt().isInt({ min: 0 }).withMessage("offset must be >= 0"),
-
-        query("from").optional().isISO8601().withMessage("from must be ISO8601").toDate(),
-        query("to").optional().isISO8601().withMessage("to must be ISO8601").toDate(),
-
-        query("reference_number").optional().trim().isString(),
-        query("category").optional().isIn(CATEGORY_LIST).withMessage("invalid category"),
-        query("ledger").optional().trim().isString(),
-
-        query("gold_out_min").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_min must be >= 0"),
-        query("gold_out_max").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_max must be >= 0"),
-        query("net_gold_min").optional().toFloat().isFloat({ min: 0 }).withMessage("net_gold_min must be >= 0"),
-        query("net_gold_max").optional().toFloat().isFloat({ min: 0 }).withMessage("net_gold_max must be >= 0"),
-
-        query("sort")
-            .optional()
-            .isIn(["timestamp_tz:asc", "timestamp_tz:desc"])
-            .withMessage("sort must be 'timestamp_tz:asc' or 'timestamp_tz:desc'"),
-    ],
+    getGoldsValidation,
     validateRequest,
     goldsController.listGolds
 );
@@ -52,19 +144,7 @@ router.get(
 // POST: /api/v1/gold_records/
 router.post(
     "/",
-    [
-        body("reference_number").trim().notEmpty().withMessage("reference_number is required"),
-        body("category")
-            .isIn(["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"])
-            .withMessage("invalid category"),
-        body("gold_in_grams").isFloat({ min: 0 }).withMessage("gold_in_grams must be >= 0").toFloat(),
-        body("gold_out_grams").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("gold_out_grams must be >= 0").toFloat(),
-        body("calculated_loss").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("calculated_loss must be >= 0").toFloat(),
-        body("timestamp_tz").isISO8601().withMessage("timestamp_tz must be ISO8601"),
-        body("details").optional({ nullable: true }).isString(),
-        body("remarks").optional({ nullable: true }).isString(),
-        body("ledger").optional({ nullable: true }).isString().trim(),
-    ],
+    createGoldValidation,
     validateRequest,
     goldsController.createGold
 );
@@ -72,18 +152,18 @@ router.post(
 // PUT: /api/v1/gold_records/:id
 router.put(
     "/:id",
-    [
-        param("id").isUUID().withMessage("id must be a valid UUID"),
-        body("reference_number").optional().trim().notEmpty(),
-        body("category").optional().isIn(["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"]),
-        body("gold_in_grams").optional().isFloat({ min: 0 }).toFloat(),
-        body("gold_out_grams").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
-        body("calculated_loss").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
-        body("timestamp_tz").optional().isISO8601(),
-        body("details").optional({ nullable: true }).isString(),
-        body("remarks").optional({ nullable: true }).isString(),
-        body("ledger").optional({ nullable: true }).isString().trim(),
-    ],
+    // [
+    //     param("id").isUUID().withMessage("id must be a valid UUID"),
+    //     body("reference_number").optional().trim().notEmpty(),
+    //     body("category").optional().isIn(["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"]),
+    //     body("gold_in_grams").optional().isFloat({ min: 0 }).toFloat(),
+    //     body("gold_out_grams").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
+    //     body("calculated_loss").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
+    //     body("timestamp_tz").optional().isISO8601(),
+    //     body("remarks").optional({ nullable: true }).isString(),
+    //     body("ledger").optional({ nullable: true }).isString().trim(),
+    // ],
+    updateGoldValidation,
     validateRequest,
     goldsController.updateGold
 );

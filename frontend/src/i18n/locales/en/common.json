@@ -15,6 +15,7 @@
   "table.weight": "Weight (g)",
   "table.net": "Net (g)",
   "table.ledger": "Ledger",
+  "table.category": "Category",
   "table.actions": "Actions",
   "table.empty": "No records",
   "table.details": "Details",
@@ -93,5 +94,18 @@
     "details": "Details",
     "remarks": "Remarks",
     "net_gold": "Net Gold"
+  },
+  "search": {
+    "from": "From Date",
+    "to": "To Date",
+    "reference": "Reference No.",
+    "submit": "Search",
+    "clear": "Clear Search",
+    "all": "All",
+    "category": "Category",
+    "ledger": "Ledger",
+    "gold_out_min": "Gold Out (Min)",
+    "gold_out_max": "Gold Out (Max)",
+    "calculated_loss": "Calculated Loss (%)"
   }
 }

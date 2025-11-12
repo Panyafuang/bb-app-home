@@ -67,6 +67,7 @@ export interface ListParams {
   net_gold_min?: number;
   net_gold_max?: number;
   sort?: Sort;
+  calculated_loss?: number | null;
 }
 
 export interface Paged<T> {

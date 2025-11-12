@@ -10,6 +10,22 @@ import type {
 
 const BASE = "/api/v1/gold_records";
 
+
+// --- Helper function
+/** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
+function toDecimalFromPercentInput(str: string): number | null {
+  if (!str) return null;
+  const s = str.replace(/%/g, "").trim(); // ลบ %
+  if (s === "") return null;
+  const n = Number(s);
+  if (Number.isNaN(n)) return null;
+
+  // ถ้าผู้ใช้พิมพ์ค่ามากกว่า 1 (เช่น 6) ให้หาร 100
+  // ถ้าผู้ใช้พิมพ์ค่าน้อยกว่า 1 (เช่น 0.06) ให้ใช้ค่านั้นเลย
+  return n > 1 ? n / 100 : n;
+}
+
+
 // ช่วยสร้าง query string โดยตัดค่าว่าง/undefined ออก
 function toQS(params: Record<string, any>) {
   const u = new URLSearchParams();
@@ -23,8 +39,16 @@ function toQS(params: Record<string, any>) {
 
 /** ปรับให้ดึง items ที่อยู่ใน data.data.items */
 export async function listGolds(params: ListParams = {}) {
+  const processedParams = { ...params }; // คัดลอก params
+  if (processedParams.calculated_loss) {
+    // แปลง "6%" เป็น 0.06
+    processedParams.calculated_loss = toDecimalFromPercentInput(
+      String(processedParams.calculated_loss)
+    );
+  }
+
   const { data } = await api.get<ApiListResponse<GoldRecord>>(
-    `${BASE}${toQS(params)}`
+    `${BASE}${toQS(processedParams)}`
   );
 
   // 🔍 ตรวจสอบว่าโครงสร้างมีชั้น data ซ้อน
@@ -67,12 +91,12 @@ export async function updateGold(id: string, payload: UpdateGoldDTO) {
 export async function checkRefUnique(reference: string) {
   // สร้าง query string
   const params = { reference };
-  
+
   // API จะคืน { data: { isUnique: boolean } }
   // (เราต้องแกะ .data สองชั้น ตามโครงสร้าง API ของคุณ)
   const { data } = await api.get<{ data: { isUnique: boolean } }>(
     `${BASE}/check-unique${toQS(params)}`
   );
-  
+
   return data.data.isUnique; // คืนค่า true ถ้า "ไม่ซ้ำ"
 }

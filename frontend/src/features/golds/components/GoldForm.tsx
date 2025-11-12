@@ -89,7 +89,24 @@ export default function GoldForm({
 }) {
   const { t } = useTranslation("common");
 
-  // ✅ 1. State ของฟอร์ม
+  // --- ✅ 1. (แก้ไข) คำนวณ Direction เริ่มต้นก่อน ---
+  const initialDirection = useMemo(() => {
+    if (!defaultValues) return "";
+    return Number(defaultValues.gold_out_grams) > 0 ? "OUT" : "IN";
+  }, [defaultValues]);
+
+  // --- ✅ 2. (แก้ไข) คำนวณ Weight เริ่มต้น โดยอิงจาก Direction ---
+  const initialWeight = useMemo(() => {
+    if (!defaultValues) return "";
+    // ถ้าเป็น OUT ให้ใช้ gold_out_grams
+    if (initialDirection === "OUT") {
+      return String(defaultValues.gold_out_grams || "");
+    }
+    // ถ้าเป็น IN (หรืออื่นๆ) ให้ใช้ gold_in_grams
+    return String(defaultValues.gold_in_grams || "");
+  }, [defaultValues, initialDirection]);
+
+  // State ของฟอร์ม
   const [date, setDate] = useState<string>(
     defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO()
   );
@@ -97,18 +114,20 @@ export default function GoldForm({
     defaultValues?.reference_number || ""
   );
   const [direction, setDirection] = useState<"" | "IN" | "OUT">(
-    defaultValues
-      ? Number(defaultValues.gold_out_grams) > 0
-        ? "OUT"
-        : "IN"
-      : ""
+    // defaultValues
+    //   ? Number(defaultValues.gold_out_grams) > 0
+    //     ? "OUT"
+    //     : "IN"
+    //   : ""
+    initialDirection
   );
   const [weight, setWeight] = useState(
-    defaultValues
-      ? String(
-          defaultValues.gold_in_grams || defaultValues.gold_out_grams || ""
-        )
-      : ""
+    // defaultValues
+    //   ? String(
+    //       defaultValues.gold_in_grams || defaultValues.gold_out_grams || ""
+    //     )
+    //   : ""
+    initialWeight
   );
   const [ledger, setLedger] = useState(defaultValues?.ledger || "");
   const [details, setDetails] = useState(defaultValues?.details || "");
@@ -225,7 +244,8 @@ export default function GoldForm({
   }, [date, reference, direction, weight, category, calculatedLoss, t]);
 
   // ตรวจสอบว่าฟอร์มพร้อมส่งหรือไม่
-  const canSubmit = Object.keys(errors).length === 0 && !checkingRef && refUnique !== false; // <-- ✅ 1. แก้ไข canSubmit (เอา refUnique ออกจาก errors)
+  const canSubmit =
+    Object.keys(errors).length === 0 && !checkingRef && refUnique !== false; // <-- ✅ 1. แก้ไข canSubmit (เอา refUnique ออกจาก errors)
 
   // --- 💅 CSS Classes (ไม่เปลี่ยนแปลง) ---
   const inputStyle =
@@ -465,7 +485,8 @@ export default function GoldForm({
       <div className="md:col-span-3">
         <label className="block text-sm font-medium">
           {t("form.ledger")}
-          {/* <span className="text-red-600"> *</span> */} {/* <-- ลบ * สีแดง */}
+          {/* <span className="text-red-600"> *</span> */}{" "}
+          {/* <-- ลบ * สีแดง */}
         </label>
         <select
           className={inputStyle} // <-- ลบตรรกะ Error

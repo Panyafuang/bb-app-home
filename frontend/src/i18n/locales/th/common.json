@@ -15,6 +15,7 @@
   "table.weight": "น้ำหนัก (กรัม)",
   "table.net": "สุทธิ (กรัม)",
   "table.ledger": "หมวดบัญชี",
+  "table.category": "หมวดหมู่",
   "table.actions": "การทำงาน",
   "table.empty": "ไม่พบข้อมูล",
   "table.details": "รายละเอียด",
@@ -93,5 +94,18 @@
     "details": "รายละเอียด",
     "remarks": "หมายเหตุ",
     "net_gold": "ทองสุทธิ"
+  },
+  "search": {
+    "from": "จากวันที่",
+    "to": "ถึงวันที่",
+    "reference": "เลขอ้างอิง",
+    "submit": "ค้นหา",
+    "clear": "ล้างการค้นหา",
+    "all": "ทั้งหมด",
+    "category": "หมวดหมู่",
+    "ledger": "หมวดบัญชี",
+    "gold_out_min": "ทองออก (ขั้นต่ำ)",
+    "gold_out_max": "ทองออก (สูงสุด)",
+    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)"
   }
 }

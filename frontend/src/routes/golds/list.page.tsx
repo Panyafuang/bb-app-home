@@ -4,12 +4,16 @@ import Pagination from "@/components/ui/Pagination";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import SearchBar from "@/features/golds/components/SearchBar";
+import { useCreateGold } from "@/features/golds/hooks/useCreateGold";
+import GoldForm from "@/features/golds/components/GoldForm";
 
 /**
  * หน้ารายการ: มี SearchBar + Table + Pagination
  */
 export default function GoldListPage() {
   const { t } = useTranslation("common");
+  const m = useCreateGold();
 
   const { data, isLoading, filters, setFilters, refetch } = useGoldsQuery({
     page: 1,
@@ -30,23 +34,16 @@ export default function GoldListPage() {
           </span>
         </h1>
       </div>
-      <div className="flex items-center justify-end">
-        {/* <Breadcrumbs
-          items={[
-            { label: t("crumb.home"), href: "/" },
-            { label: t("crumb.golds") },
-          ]}
-        /> */}
 
-        {/* ปุ่ม “เพิ่มรายการ” */}
-        <Link
-          to="/materials/golds/new"
-          className="inline-flex items-center text-white bg-linear-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-linear-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
-        >
-          + {t("actions.add")}
-        </Link>
-      </div>
-      {/* <SearchBar onChange={setFilters} onSubmit={refetch} /> */}
+      <GoldForm
+        mode="create"
+        onSubmit={async (dto) => {
+          await m.mutateAsync(dto);
+        }}
+      />
+
+      <div className="border border-gray-200 rounded-2xl p-4 mt-7">
+      <SearchBar onChange={setFilters} onSubmit={refetch} />
       <RecordsTable
         rows={rows}
         loading={isLoading}
@@ -54,7 +51,6 @@ export default function GoldListPage() {
         page={page}
         limit={limit}
       />
-
       <Pagination
         page={page}
         limit={limit}
@@ -64,6 +60,7 @@ export default function GoldListPage() {
           setFilters((prev) => ({ ...prev, page: 1, limit: next }))
         }
       />
+      </div>
     </div>
   );
 }

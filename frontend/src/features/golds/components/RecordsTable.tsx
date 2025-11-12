@@ -78,10 +78,11 @@ export default function RecordsTable({
             <th className="px-4 py-3">{t("table.date")}</th>
             <th className="px-4 py-3">{t("table.reference")}</th>
             <th className="px-4 py-3">{t("table.details")}</th>
+            <th className="px-4 py-3">{t("table.ledger")}</th>
+            <th className="px-4 py-3">{t("table.category")}</th>
             <th className="px-4 py-3">{t("table.direction")}</th>
             <th className="px-4 py-3 text-center">{t("table.weight")}</th>
             <th className="px-4 py-3 text-center">{t("table.net")}</th>
-            <th className="px-4 py-3">{t("table.ledger")}</th>
             <th className="px-4 py-3">{t("table.remarks")}</th>
             <th className="px-2 py-3 text-center">{t("table.actions")}</th>
           </tr>
@@ -113,14 +114,15 @@ export default function RecordsTable({
                   <td className="px-6 py-4">
                     {r.reference_number || r.reference}
                   </td>
-                  <td className="px-6 py-4">
-                    {r.details || r.details}
-                  </td>
+                  <td className="px-6 py-4">{r.details || r.details}</td>
+                  <td className="px-6 py-4">{r.ledger}</td>
+                  <td className="px-6 py-4">{r.category}</td>
                   <td className="px-6 py-4">
                     {Number(r.gold_out_grams) > 0 ? "OUT" : "IN"}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {r.gold_in_grams || r.gold_out_grams}
+                    {/* {r.gold_in_grams || r.gold_out_grams} */}
+                    {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
                   </td>
                   <td
                     className={`px-6 py-4 text-right ${
@@ -131,13 +133,14 @@ export default function RecordsTable({
                   >
                     {r.net_gold_grams}
                   </td>
-                  <td className="px-6 py-4">{r.ledger}</td>
                   <td className="px-6 py-4">{r.remarks}</td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end">
                       <button
                         title={t("table.edit") || "Edit"}
-                       onClick={() => navigate(`/materials/golds/edit/${r.id}`)}
+                        onClick={() =>
+                          navigate(`/materials/golds/edit/${r.id}`)
+                        }
                         className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 mr-2"
                       >
                         <FiEdit />
@@ -149,7 +152,6 @@ export default function RecordsTable({
                       >
                         <FiTrash2 />
                       </button>
-
                     </div>
                   </td>
                 </tr>
