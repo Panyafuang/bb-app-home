@@ -11,14 +11,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import "./index.css";
 import AppShell from "./layouts/AppShell.tsx";
-
-// react-toastify: container สำหรับแสดง toast
-// import { ToastContainer } from "react-toastify";
 import GoldListPage from "./routes/golds/list.page.tsx";
 import ToastI18nProvider from "./components/ToastI18nProvider.tsx";
 import "./styles/globals.css";
-// import GoldCreatePage from "./routes/golds/create.page.tsx";
-import GoldEditPage from "./routes/golds/edit.page.tsx";
+// import GoldEditPage from "./routes/golds/edit.page.tsx";
 
 // ✅ React Query ใช้จัดการ server-state / cache API
 const qc = new QueryClient();
@@ -40,7 +36,9 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/materials/golds" element={<GoldListPage />} />
             {/* <Route path="/materials/golds/new" element={<GoldCreatePage />} /> */}
-            <Route path="/materials/golds/edit/:id" element={<GoldEditPage />} />
+            {/* <Route path="/materials/golds/edit/:id" element={<GoldEditPage />} /> */}
+
+            <Route path="/materials/golds/edit/:id" element={<GoldListPage />} />
             
             {/* ✅ route อื่นที่ไม่รู้จัก → ส่งกลับ /golds */}
             <Route

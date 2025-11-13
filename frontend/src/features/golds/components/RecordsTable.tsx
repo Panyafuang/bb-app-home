@@ -74,17 +74,30 @@ export default function RecordsTable({
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="text-sm text-gray-700 uppercase bg-gray-50">
           <tr>
-            <th className="px-4 py-3 w-14">#</th>
             <th className="px-4 py-3">{t("table.date")}</th>
-            <th className="px-4 py-3">{t("table.reference")}</th>
-            <th className="px-4 py-3">{t("table.details")}</th>
-            <th className="px-4 py-3">{t("table.ledger")}</th>
-            <th className="px-4 py-3">{t("table.category")}</th>
+            <th className="px-4 py-3 min-w-[190px]">{t("table.ledger")}</th>
+            <th className="px-4 py-3 min-w-[180px]">{t("table.reference")}</th>
+            <th className="px-4 py-3 min-w-[180px]">
+              {t("table.related_reference_number")}
+            </th>
             <th className="px-4 py-3">{t("table.direction")}</th>
+            <th className="px-4 py-3 min-w-[220px]">
+              {t("table.counterpart")}
+            </th>
+            <th className="px-4 py-3">{t("table.fineness")}</th>
+            <th className="px-4 py-3">{t("table.status")}</th>
+            <th className="px-4 py-3 min-w-[200px]">
+              {t("table.good_details")}
+            </th>
+            <th className="px-4 py-3">{t("table.shipping_agent")}</th>
             <th className="px-4 py-3 text-center">{t("table.weight")}</th>
-            <th className="px-4 py-3 text-center">{t("table.net")}</th>
-            <th className="px-4 py-3">{t("table.remarks")}</th>
-            <th className="px-2 py-3 text-center">{t("table.actions")}</th>
+            <th className="px-4 py-3 text-center">
+              {t("table.calculated_loss")}
+            </th>
+            <th className="px-4 py-3 min-w-[220px]">{t("table.remarks")}</th>
+            <th className="sticky right-0 bg-gray-50 px-2 py-3 text-center">
+              {t("table.actions")}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -98,33 +111,61 @@ export default function RecordsTable({
           )}
           {!loading &&
             rows.map((r: any, i: number) => {
-              const order = (page - 1) * limit + i + 1; // 👈 คำนวณลำดับ
-              // const dir = Number(r.gold_out_grams) > 0 ? "OUT" : "IN";
-              // const net = Number(r.net_gold_grams ?? 0);
-
               return (
                 <tr
                   key={i}
                   className="bg-white border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4">{order}</td>
                   <td className="px-6 py-4">
                     {formatDate(r.timestamp_tz, i18n.language)}
                   </td>
-                  <td className="px-6 py-4">
-                    {r.reference_number || r.reference}
+                  <td className="px-6 py-4 min-w-[190px]">{r.ledger}</td>
+                  <td className="px-6 py-4 min-w-[180px]">
+                    {r.reference_number}
                   </td>
-                  <td className="px-6 py-4">{r.details || r.details}</td>
-                  <td className="px-6 py-4">{r.ledger}</td>
-                  <td className="px-6 py-4">{r.category}</td>
-                  <td className="px-6 py-4">
-                    {Number(r.gold_out_grams) > 0 ? "OUT" : "IN"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {/* {r.gold_in_grams || r.gold_out_grams} */}
-                    {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
+                  <td className="px-6 py-4 min-w-[180px]">
+                    {r.related_reference_number}
                   </td>
                   <td
+                    className={`px-6 py-4 ${
+                      Number(r.gold_out_grams) > 0
+                        ? "text-red-600"
+                        : "text-green-700"
+                    }`}
+                  >
+                    {Number(r.gold_out_grams) > 0 ? (
+                      <>
+                        <span className="text-lg">↑</span>
+                        OUT
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">↓</span>
+                        IN
+                      </>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 min-w-[220px]">{r.counterpart}</td>
+                  <td className="px-6 py-4">{r.fineness}</td>
+                  <td className="px-6 py-4">{r.status}</td>
+                  <td className="px-6 py-4 min-w-[200px]">{r.good_details}</td>
+                  <td className="px-6 py-4">{r.shipping_agent}</td>
+                  <td
+                    className={`px-6 py-4 text-right ${
+                      Number(r.gold_out_grams) > 0
+                        ? "text-red-600"
+                        : "text-green-700"
+                    }`}
+                  >
+                    {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {r.calculated_loss != null
+                      ? `${(r.calculated_loss * 100).toFixed(2)}%`
+                      : ""}
+                  </td>
+
+                  {/* <td
                     className={`px-6 py-4 text-right ${
                       Number(r.net_gold_grams) < 0
                         ? "text-red-600"
@@ -132,15 +173,24 @@ export default function RecordsTable({
                     }`}
                   >
                     {r.net_gold_grams}
-                  </td>
-                  <td className="px-6 py-4">{r.remarks}</td>
-                  <td className="px-6 py-4">
+                  </td> */}
+
+                  <td className="px-6 py-4 min-w-[220px]">{r.remarks}</td>
+                  {/* <td className="px-6 py-4"> */}
+                  <td className="sticky right-0 bg-gray-50 px-6 py-4 hover:bg-gray-50">
                     <div className="flex justify-end">
                       <button
                         title={t("table.edit") || "Edit"}
-                        onClick={() =>
-                          navigate(`/materials/golds/edit/${r.id}`)
-                        }
+                        // onClick={() =>
+                        //   navigate(`/materials/golds/edit/${r.id}`)
+                        // }
+                        onClick={() => {
+                          // 2. สั่งให้ย้ายหน้า
+                          navigate(`/materials/golds/edit/${r.id}`);
+
+                          // ✅ 3. (เพิ่ม) สั่งให้เลื่อนไปบนสุด
+                          window.scrollTo(0, 0);
+                        }}
                         className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 mr-2"
                       >
                         <FiEdit />

@@ -79,4 +79,6 @@ export type RawSearchParams = {
   sort?: any;
   counterpart?: any;
   status?: any;
+  shipping_agent?: any;
+  fineness?: any;
 };

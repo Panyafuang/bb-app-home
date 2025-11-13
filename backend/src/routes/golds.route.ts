@@ -8,12 +8,26 @@ import { validateRequest } from "../middlewares/validate-request";
 import { LEDGER_LIST } from "../types/golds";
 
 const router = Router();
-
+// status (import, export)
 const STATUS_LIST_IN = ['purchased', 'received'];
 const STATUS_LIST_OUT = ['invoiced', 'returned'];
+// Fineness
 const FINENESS_GOLD = ['8K', '9K', '10K', '18K', '22K', '23K', '24K', 'Other'];
 const FINENESS_PALLADIUM = ['14%', '95%', 'Other'];
 const FINENESS_PLATINUM = ['14%', '95%', 'Other'];
+
+const ALL_FINENESS_VALUES = [...new Set([...FINENESS_GOLD, ...FINENESS_PALLADIUM, ...FINENESS_PLATINUM])];
+const SHIPPING_AGENT = [
+  "FedEx",
+  "DHL",
+  "RK International",
+  "Ferrari",
+  "Brinks",
+  "Kerry Express",
+  "Flash Express",
+  "Thialand Post",
+  "Others",
+] as const;
 
 const getGoldsValidation = [
     query("page").optional().toInt().isInt({ min: 1 }).withMessage("page must be >= 1"),
@@ -28,6 +42,8 @@ const getGoldsValidation = [
     query("ledger").optional().isIn(LEDGER_LIST).withMessage("invalid ledger"),
     query("counterpart").optional().trim().isString(),
     query("status").optional().trim().isString(),
+    query("shipping_agent").optional().isIn(SHIPPING_AGENT).withMessage("Invalid shipping agent"),
+    query("fineness").optional().isIn(ALL_FINENESS_VALUES).withMessage("Invalid fineness agent"),
 
     query("gold_out_min").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_min must be >= 0"),
     query("gold_out_max").optional().toFloat().isFloat({ min: 0 }).withMessage("gold_out_max must be >= 0"),
@@ -152,17 +168,6 @@ router.post(
 // PUT: /api/v1/gold_records/:id
 router.put(
     "/:id",
-    // [
-    //     param("id").isUUID().withMessage("id must be a valid UUID"),
-    //     body("reference_number").optional().trim().notEmpty(),
-    //     body("category").optional().isIn(["Beauty Bijoux", "PV fine", "PV green", "PV Accessories"]),
-    //     body("gold_in_grams").optional().isFloat({ min: 0 }).toFloat(),
-    //     body("gold_out_grams").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
-    //     body("calculated_loss").optional({ nullable: true }).isFloat({ min: 0 }).toFloat(),
-    //     body("timestamp_tz").optional().isISO8601(),
-    //     body("remarks").optional({ nullable: true }).isString(),
-    //     body("ledger").optional({ nullable: true }).isString().trim(),
-    // ],
     updateGoldValidation,
     validateRequest,
     goldsController.updateGold

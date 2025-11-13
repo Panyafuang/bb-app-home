@@ -85,6 +85,14 @@ function buildWhere(params: RepoFindParams) {
     values.push(params.ledger);
     i++;
   }
+  if (params.fineness) {
+    where.push(`fineness = $${i++}`);
+    values.push(params.fineness);
+  }
+  if (params.shipping_agent) {
+    where.push(`shipping_agent = $${i++}`);
+    values.push(params.shipping_agent);
+  }
 
   // เงื่อนไขสำหรับปริมาณทอง
   if (params.gold_out_min != null) {

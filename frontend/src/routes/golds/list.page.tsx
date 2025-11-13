@@ -2,7 +2,7 @@ import { useGoldsQuery } from "@/features/golds/hooks/useGoldsQuery";
 import RecordsTable from "@/features/golds/components/RecordsTable";
 import Pagination from "@/components/ui/Pagination";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SearchBar from "@/features/golds/components/SearchBar";
 import { useCreateGold } from "@/features/golds/hooks/useCreateGold";
@@ -37,29 +37,41 @@ export default function GoldListPage() {
 
       <GoldForm
         mode="create"
+        // onSubmit={async (dto) => {
+        //   await m.mutateAsync(dto);
+        // }}
+
         onSubmit={async (dto) => {
+          // 1. สั่งสร้างข้อมูล (เหมือนเดิม)
           await m.mutateAsync(dto);
+
+          // 2. (เพิ่ม) สั่งให้ตารางโหลดข้อมูลใหม่!
+          refetch();
         }}
       />
 
+      {/* <hr className="h-px my-8 bg-gray-300 border-0"></hr> */}
+      <hr className="w-48 h-1 mx-auto my-4 bg-gray-300 border-0 rounded-sm md:my-10"></hr>
       <div className="border border-gray-200 rounded-2xl p-4 mt-7">
-      <SearchBar onChange={setFilters} onSubmit={refetch} />
-      <RecordsTable
-        rows={rows}
-        loading={isLoading}
-        onDeleted={refetch}
-        page={page}
-        limit={limit}
-      />
-      <Pagination
-        page={page}
-        limit={limit}
-        total={total}
-        onPageChange={(next) => setFilters((prev) => ({ ...prev, page: next }))}
-        onLimitChange={(next) =>
-          setFilters((prev) => ({ ...prev, page: 1, limit: next }))
-        }
-      />
+        <SearchBar onChange={setFilters} onSubmit={refetch} />
+        <RecordsTable
+          rows={rows}
+          loading={isLoading}
+          onDeleted={refetch}
+          page={page}
+          limit={limit}
+        />
+        <Pagination
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={(next) =>
+            setFilters((prev) => ({ ...prev, page: next }))
+          }
+          onLimitChange={(next) =>
+            setFilters((prev) => ({ ...prev, page: 1, limit: next }))
+          }
+        />
       </div>
     </div>
   );

@@ -58,6 +58,8 @@ export async function searchGolds(rawParams: RawSearchParams): Promise<{ items: 
     counterpart: rawParams.counterpart,
     status: rawParams.status,
     related_reference_number: rawParams.related_reference_number,
+    shipping_agent: rawParams.shipping_agent,
+    fineness: rawParams.fineness,
     // (Frontend ควรแปลง "6%" เป็น 0.06 มาให้แล้ว)
     calculated_loss: parseNumber(rawParams.calculated_loss),
     sort: (rawParams.sort?.toString() ?? "timestamp_tz:desc") as
