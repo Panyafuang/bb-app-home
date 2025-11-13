@@ -3,7 +3,7 @@
 import debugFactory from "debug";
 
 import * as goldsRepo from "../modules/golds/golds.repo";
-import { CreateGoldDto, GoldRecord, UpdateGoldDto } from "../types/golds";
+import { CreateGoldDto, GoldRecord, RawSearchParams, UpdateGoldDto } from "../types/golds";
 import { withTx } from "../db/tx";
 import { AppError } from "../common/app-error";
 
@@ -21,48 +21,54 @@ const parseNumber = (v: any): number | null => {
   return Number.isNaN(n) ? null : n;
 };
 
-// Type สำหรับ raw input จาก controller
-type RawSearchParams = {
-  page?: any;
-  limit?: any;
-  offset?: any;
-  from?: any;
-  to?: any;
-  reference_number?: any;
-  category?: any;
-  ledger?: any;
-  gold_out_min?: any;
-  gold_out_max?: any;
-  net_gold_min?: any;
-  net_gold_max?: any;
-  sort?: any;
-};
 
 export async function searchGolds(rawParams: RawSearchParams): Promise<{ items: GoldRecord[]; total: number; page?: number; limit?: number; }> {
   log("searchGolds page=%d limit=%d", rawParams.page, rawParams.limit);
 
   // Parse และ normalize ค่าทั้งหมด
   const page = Math.max(parseNumber(rawParams.page) ?? 1, 1);
-  const limit = Math.max(parseNumber(rawParams.limit) ?? 50, 100);
+  const rawLimit = Number(rawParams.limit);
+  const limit = Number.isFinite(rawLimit)
+    ? Math.min(Math.max(rawLimit, 1), 50) // 1..50
+    : 50;                                 // default
   const offset = parseNumber(rawParams.offset) ?? (page - 1) * limit;
+
+  // --- 💡 1. (แก้ไข) แยกการ Parse วันที่ออกมา ---
+  const from = parseDate(rawParams.from);
+  const toRaw = parseDate(rawParams.to);
+
+  // --- 💡 2. (แก้ไข) ตั้งเวลา "to" ให้เป็น 23:59:59 ---
+  let to = null;
+  if (toRaw) {
+    to = toRaw;
+    // ตั้งค่าเวลาให้เป็น 23:59:59.999 (เวลาสุดท้ายของวัน)
+    to.setHours(23, 59, 59, 999);
+  }
 
   // Parse filters
   const params = {
-    from: parseDate(rawParams.from),
-    to: parseDate(rawParams.to),
+    from: from, // (ใช้ตัวแปรที่ Parse แล้ว)
+    to: to,     // (ใช้ตัวแปรที่ Parse และแก้ไขเวลาแล้ว)
     reference_number: rawParams.reference_number?.toString() ?? null,
-    category: rawParams.category?.toString() ?? null,
     ledger: rawParams.ledger?.toString() ?? null,
     gold_out_min: parseNumber(rawParams.gold_out_min),
     gold_out_max: parseNumber(rawParams.gold_out_max),
     net_gold_min: parseNumber(rawParams.net_gold_min),
     net_gold_max: parseNumber(rawParams.net_gold_max),
+    counterpart: rawParams.counterpart,
+    status: rawParams.status,
+    related_reference_number: rawParams.related_reference_number,
+    shipping_agent: rawParams.shipping_agent,
+    fineness: rawParams.fineness,
+    // (Frontend ควรแปลง "6%" เป็น 0.06 มาให้แล้ว)
+    calculated_loss: parseNumber(rawParams.calculated_loss),
     sort: (rawParams.sort?.toString() ?? "timestamp_tz:desc") as
       | "timestamp_tz:asc"
       | "timestamp_tz:desc",
     limit,
     offset,
   };
+
 
   // Business validations → คืน error แบบ client (400) เมื่อ rule ผิด
   if (params.from && params.to && params.from > params.to) {
@@ -137,4 +143,22 @@ export async function removeGold(id: string): Promise<boolean> {
   });
   log("Transaction complete for id=%s", id);
   return success;
+}
+
+/**
+ * (เพิ่มฟังก์ชันนี้)
+ * ตรวจสอบว่า reference unique (ไม่ซ้ำ) หรือไม่
+ * @param reference
+ * @returns true ถ้า "ไม่ซ้ำ" (Unique), false ถ้า "ซ้ำ"
+ */
+export async function isReferenceUnique(reference: string): Promise<boolean> {
+  log("isReferenceUnique reference=%s", reference);
+
+  if (!reference) {
+    throw AppError.invalidInput([
+      { field: "reference", message: "Reference is required" },
+    ]);
+  }
+  const exists = await goldsRepo.checkReferenceExists(reference);
+  return !exists; // คืนค่า true ถ้า "ไม่ซ้ำ"
 }

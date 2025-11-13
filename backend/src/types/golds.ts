@@ -1,35 +1,84 @@
-export type Category =
-  | "Beauty Bijoux"
-  | "PV fine"
-  | "PV green"
-  | "PV Accessories";
+export type Ledger = 'Beauty Bijoux' | 'Green Gold' | 'Palladium' | 'Platinum' | 'PV Accessories' | 'PV Fine Gold';
 
-export type GoldRecord = {
-  id: string;                     // Primary key ของแต่ละรายการทองคำ
-  timestamp_tz: string;           // เวลาที่บันทึกการทำรายการทอง
-  reference_number: string;       // หมายเลขอ้างอิงเอกสาร เช่น ใบรับทอง, ใบส่งผลิต
-  details: string | null;         // รายละเอียดเพิ่มเติมเกี่ยวกับรายการทอง
-  gold_in_grams: string;          // pg numeric => string น้ำหนักทองที่รับเข้า (หน่วย: กรัม)
-  gold_out_grams: string | null;  // น้ำหนักทองที่จ่ายออก (หน่วย: กรัม)
-  net_gold_grams: string;         // auto generated (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
-  calculated_loss: string | null; // น้ำหนักทองที่สูญเสียระหว่างการผลิต
-  remarks: string | null;         // หมายเหตุ เช่น เหตุผลการรับ/จ่ายทอง
-  category: Category;             // หมวดหมู่สินค้า เช่น Beauty Bijoux, PV fine, PV green, PV Accessories
-  ledger: string | null;          // หมวดบัญชีทอง เช่น Green Gold, Platinum, PV Fine Gold
-  created_at: string | null;      // วันที่สร้างข้อมูล
-  updated_at: string | null;      // วันที่แก้ไขข้อมูลล่าสุด (อัปเดตอัตโนมัติผ่าน Trigger)
-};
+export const LEDGER_LIST = [
+  'Beauty Bijoux', 'Green Gold', 'Palladium', 'Platinum', 'PV Accessories', 'PV Fine Gold'
+] as const;
 
-export type CreateGoldDto = {
-  timestamp_tz?: string;          // optional, default now
-  reference_number: string;
-  details?: string | null;
+export type LedgerEnum = (typeof LEDGER_LIST)[number];
+
+// GoldRecord Interface
+export interface GoldRecord {
+  id: string;                               // Primary key ของแต่ละรายการทองคำ
+  timestamp_tz: string;                     // เวลาที่บันทึกการทำรายการทอง
+  reference_number: string;                 // หมายเลขอ้างอิงเอกสาร เช่น ใบรับทอง, ใบส่งผลิต
+  related_reference_number: string | null;  // หมายเลขอ้างอิงของเอกสาร/ธุรกรรมที่เกี่ยวข้อง
+  gold_in_grams: number;                    // น้ำหนักทองที่รับเข้า (หน่วย: กรัม)
+  gold_out_grams: number;                   // น้ำหนักทองที่จ่ายออก (หน่วย: กรัม)
+  net_gold_grams: number;                   // คำนวณอัตโนมัติ (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
+  calculated_loss: number | null;           // น้ำหนักทองที่สูญเสียระหว่างการผลิต
+  ledger: Ledger;                           // (ใช้ Enum ใหม่)
+  counterpart: string | null;               // คู่ค้า/ลูกค้า/คู่ธุรกรรม
+  fineness: string | null;                  // ความบริสุทธิ์ของทอง (0.999 = 24k, 0.750 = 18k ฯลฯ)
+  good_details: string | null;              // รายละเอียดสินค้า เช่น "chain, sample, casting"
+  status: string | null;                    // เช่น "Purchased", "Invoiced", "Returned"
+  shipping_agent: string | null;            // ผู้ให้บริการขนส่ง/โลจิสติกส์
+  remarks: string | null;                   // หมายเหตุ เช่น เหตุผลการรับ/จ่ายทอง
+  created_at: string;                       // วันที่สร้างข้อมูล
+  updated_at: string;                       // วันที่แก้ไขข้อมูลล่าสุด (อัปเดตอัตโนมัติผ่าน Trigger)
+}
+
+// DTO สำหรับการสร้าง (อิงตามฟอร์ม Input ใหม่)
+export interface CreateGoldDto {
+  timestamp_tz: string;       // จากฟอร์ม Date (optional, default now)
+  reference_number: string;   // จากฟอร์ม Ref Number
+  ledger: Ledger;         // จากฟอร์ม Ledger
   gold_in_grams: number;
-  gold_out_grams?: number | null;
-  calculated_loss?: number | null;
-  remarks?: string | null;
-  category: Category;
-  ledger?: string | null;
-};
+  gold_out_grams: number;
 
+  // Fields Optional
+  calculated_loss?: number | null; // (เป็น "กรัม" แต่ front-end กรอกเป็น % แปลงเป็นกรัมจาก front-end)
+  fineness: string | null;
+  counterpart: string | null;
+  good_details: string | null;
+  status: string | null;
+  shipping_agent: string | null;
+  remarks: string | null;
+  related_reference_number: string | null;
+}
+
+// Interface สำหรับการค้นหา (รับค่าจาก Query Params)
+export interface GoldRecordQuery {
+  page?: number;
+  limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  refSearch?: string;
+  ledger?: string; // ควรเป็น LedgerEnum แต่รับจาก query เป็น string
+  counterpartSearch?: string;
+  statusSearch?: string;
+}
+
+// DTO สำหรับการอัปเดต
 export type UpdateGoldDto = Partial<CreateGoldDto>;
+
+// Type สำหรับ raw input จาก controller
+export type RawSearchParams = {
+  page?: any;
+  limit?: any;
+  offset?: any;
+  from?: any;
+  to?: any;
+  reference_number?: any;
+  related_reference_number?: any;
+  ledger?: any;
+  gold_out_min?: any;
+  gold_out_max?: any;
+  net_gold_min?: any;
+  net_gold_max?: any;
+  calculated_loss?: any;
+  sort?: any;
+  counterpart?: any;
+  status?: any;
+  shipping_agent?: any;
+  fineness?: any;
+};

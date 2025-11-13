@@ -1,0 +1,143 @@
+{
+  "utils": {
+    "loading": "Loading..."
+  },
+  "app.title": "BB-Gold",
+  "nav.list": "List",
+  "nav.create": "Create",
+  "table": {
+    "date": "Date",
+    "reference": "Ref. Num",
+    "direction": "Direction",
+    "weight": "Weight (g)",
+    "net": "Net (g)",
+    "ledger": "Ledger",
+    "category": "Category",
+    "actions": "Actions",
+    "empty": "No records",
+    "details": "Details",
+    "remarks": "Remarks",
+    "edit": "Edit",
+    "related_reference_number": "Related Ref. Num",
+    "counterpart": "Counterpart",
+    "fineness": "Fineness",
+    "status": "Status",
+    "good_details": "Good Details",
+    "shipping_agent": "Shipping Agent",
+    "calculated_loss": "Calc. Loss"
+  },
+  "modal.delete.title": "Confirm delete",
+  "modal.delete.desc": "Do you want to delete this record? This action cannot be undone.",
+  "modal.confirm": "Delete",
+  "modal.cancel": "Cancel",
+  "pagination.prev": "Prev",
+  "pagination.next": "Next",
+  "pagination.showing": "Showing",
+  "pagination.of": "of",
+  "pagination.perPage": "per page",
+  "menu.dashboard": "Dashboard",
+  "menu.ecommerce": "E-commerce",
+  "menu.products": "Products",
+  "menu.billing": "Billing",
+  "menu.invoice": "Invoice",
+  "menu.inbox": "Inbox",
+  "menu.users": "Users",
+  "menu.signin": "Sign In",
+  "menu.signup": "Sign Up",
+  "menu.collapse": "Collapse",
+  "menu.expand": "Expand",
+  "crumb.home": "Home",
+  "crumb.golds": "Golds",
+  "crumb.create": "Create",
+  "crumb.edit": "Edit",
+  "crumb.dashboard": "Dashboard",
+  "crumb.products": "Products",
+  "toast.saved": "Saved",
+  "toast.failed": "Something went wrong",
+  "actions.add": "Add record",
+  "actions.edit": "Edit record",
+  "header": {
+    "main_title": "BB‑Gold — Transactions",
+    "material_report": "Raw material report"
+  },
+  "validation": {
+    "required": "This field is required",
+    "weight": {
+      "positive": "Weight must be greater than 0",
+      "max": "Weight cannot exceed 9,999,999.999"
+    },
+    "date": {
+      "invalidFormat": "Invalid date format",
+      "future": "Date cannot be in the future",
+      "tooOld": "Date cannot be older than {{date}}"
+    },
+    "loss": {
+      "range": "Must be between 0% and 100%",
+      "invalidFormat": "Invalid percentage format"
+    },
+    "ref": {
+      "maxLength": "Cannot exceed 100 characters",
+      "pattern": "Only letters, numbers, hyphens, underscores, spaces, and slashes allowed",
+      "exists": "Reference number already exists"
+    }
+  },
+  "form": {
+    "saving": "Saving...",
+    "calculated_loss": "Calculated Loss (%)",
+    "save": "Save",
+    "reset": "Reset",
+    "date": "Date",
+    "reference": "Reference Number",
+    "direction": "Direction",
+    "in": "↓ IN",
+    "out": "↑ OUT",
+    "weight": "Weight (g)",
+    "weight_sent": "Gold Sent (g)",
+    "weight_received": "Gold Received (g)",
+    "ledger": "Ledger",
+    "category": "Category",
+    "details": "Details",
+    "remarks": "Remarks",
+    "net_gold": "Net Gold",
+    "related_reference": "Related Reference",
+    "weight_baht": "Weight (Baht)",
+    "weight_taels": "Weight (Taels)",
+    "fineness": "Fineness",
+    "fineness_options": {
+      "select_one": "Select a fineness...",
+      "select_ledger_first": "Select ledger first"
+    },
+    "calculated_loss_grams": "Calculated Loss (g)",
+    "calculated_loss_percent": "Calculated Loss (%)",
+    "calculated_loss_percent_placeholder": "e.g. 0.5",
+    "counterpart": "Counterpart",
+    "shipping_agent": "Shipping Agent",
+    "status": "Status",
+    "status_options": {
+      "select_one": "Select a status...",
+      "select_direction_first": "Select direction first",
+      "purchased": "Purchased",
+      "received": "Received",
+      "invoiced": "Invoiced",
+      "returned": "Returned"
+    },
+    "good_details": "Good Details"
+  },
+  "search": {
+    "from": "From Date",
+    "to": "To Date",
+    "reference": "Reference No.",
+    "submit": "Search",
+    "clear": "Clear Search",
+    "all": "All",
+    "category": "Category",
+    "ledger": "Ledger",
+    "gold_out_min": "Gold Out (Min)",
+    "gold_out_max": "Gold Out (Max)",
+    "calculated_loss": "Calculated Loss (%)",
+    "shipping_agent": "Shipping Agent",
+    "counterpart": "Counterpart",
+    "fineness": "Fineness",
+    "select_ledger_first": "Select Ledger First"
+  }
+}

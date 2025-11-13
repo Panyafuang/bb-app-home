@@ -117,3 +117,18 @@ export async function removeGold(
     next(err);
   }
 }
+
+/**
+ * GET /api/v1/gold_records/check-unique?reference=...
+ */
+export async function checkUnique(req: Request, res: Response, next: NextFunction) {
+  try {
+    const reference = req.query.reference as string;
+    log("checkUnique refernce=%s", reference);
+
+    const isUnique = await goldsService.isReferenceUnique(reference);
+    return ok(res, { isUnique }); // คืนค่า { isUnique: true } หรือ { isUnique: false }
+  } catch (err) {
+    next(err);
+  }
+}

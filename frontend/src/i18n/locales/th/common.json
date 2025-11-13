@@ -1,0 +1,148 @@
+{
+  "utils": {
+    "loading": "กำลังโหลดข้อมูล..."
+  },
+  "app.title": "BB-Gold",
+  "nav.list": "รายการ",
+  "nav.create": "เพิ่มใหม่",
+  "search.from": "จากวันที่",
+  "search.to": "ถึงวันที่",
+  "search.reference": "เลขอ้างอิง",
+  "search.submit": "ค้นหา",
+  "table": {
+    "date": "วันที่",
+    "reference": "เลขอ้างอิง",
+    "direction": "ทิศทาง",
+    "weight": "น้ำหนัก (กรัม)",
+    "net": "สุทธิ (กรัม)",
+    "ledger": "ประเภททอง",
+    "category": "หมวดหมู่",
+    "actions": "การทำงาน",
+    "empty": "ไม่พบข้อมูล",
+    "details": "รายละเอียด",
+    "remarks": "หมายเหตุ",
+    "edit": "แก้ไข",
+    "related_reference_number": "เลขอ้างอิงที่เกี่ยวข้อง",
+    "counterpart": "คู่ค้า",
+    "fineness": "เปอร์เซ็นต์ทอง",
+    "status": "สถานะ",
+    "good_details": "รายละเอียดสินค้า",
+    "shipping_agent": "ตัวแทนขนส่ง",
+    "calculated_loss": "น้ำหนักที่สูญเสีย (คำนวณ)"
+  },
+
+  "modal.delete.title": "ยืนยันการลบ",
+  "modal.delete.desc": "ต้องการลบรายการนี้หรือไม่? การลบไม่สามารถย้อนกลับได้",
+  "modal.confirm": "ลบ",
+  "modal.cancel": "ยกเลิก",
+  "pagination.prev": "ก่อนหน้า",
+  "pagination.next": "ถัดไป",
+  "pagination.showing": "แสดง",
+  "pagination.of": "จากทั้งหมด",
+  "pagination.perPage": "ต่อหน้า",
+  "menu.dashboard": "Dashboard",
+  "menu.ecommerce": "E-commerce",
+  "menu.products": "Products",
+  "menu.billing": "Billing",
+  "menu.invoice": "Invoice",
+  "menu.inbox": "Inbox",
+  "menu.users": "Users",
+  "menu.signin": "Sign In",
+  "menu.signup": "Sign Up",
+  "menu.collapse": "ยุบเมนู",
+  "menu.expand": "ขยายเมนู",
+  "crumb.home": "หน้าแรก",
+  "crumb.golds": "รายการทอง",
+  "crumb.create": "เพิ่มใหม่",
+  "crumb.edit": "แก้ไข",
+  "crumb.dashboard": "แดชบอร์ด",
+  "crumb.products": "สินค้า",
+  "toast.saved": "บันทึกสำเร็จ",
+  "toast.failed": "เกิดข้อผิดพลาด",
+  "actions.add": "เพิ่มรายการ",
+  "actions.edit": "แก้ไขรายการ",
+  "header": {
+    "main_title": "BB‑Gold — ธุรกรรม",
+    "material_report": "รายงานสินค้า/วัตถุดิบ"
+  },
+  "validation": {
+    "required": "กรุณากรอกข้อมูล",
+    "weight": {
+      "positive": "น้ำหนักต้องมากกว่า 0",
+      "max": "น้ำหนักห้ามเกิน 9,999,999.999"
+    },
+    "date": {
+      "invalidFormat": "รูปแบบวันที่ไม่ถูกต้อง",
+      "future": "วันที่ห้ามเป็นอนาคต",
+      "tooOld": "ห้ามเก่ากว่าวันที่ {{date}}"
+    },
+    "loss": {
+      "range": "ต้องอยู่ระหว่าง 0% ถึง 100%",
+      "invalidFormat": "รูปแบบเปอร์เซ็นต์ไม่ถูกต้อง"
+    },
+    "ref": {
+      "maxLength": "ห้ามเกิน 100 ตัวอักษร",
+      "pattern": "ใช้ได้เฉพาะตัวอักษร, ตัวเลข, -, _, /, และเว้นวรรค",
+      "exists": "เลขอ้างอิงนี้ถูกใช้แล้ว"
+    }
+  },
+  "form": {
+    "saving": "กำลังบันทึก...",
+    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)",
+    "save": "บันทึก",
+    "reset": "ล้างค่า",
+    "date": "วันที่",
+    "reference": "เลขอ้างอิง",
+    "direction": "ทิศทาง",
+    "in": "↓ IN",
+    "out": "↑ OUT",
+    "weight": "น้ำหนัก (g)",
+    "weight_sent": "ทองที่ส่ง (g)",
+    "weight_received": "ทองที่รับ (g)",
+    "ledger": "ประเภททอง",
+    "category": "หมวดหมู่",
+    "details": "รายละเอียด",
+    "remarks": "หมายเหตุ",
+    "net_gold": "ทองสุทธิ",
+    "related_reference": "เลขอ้างอิงเกี่ยวข้อง",
+    "weight_baht": "น้ำหนัก (บาท)",
+    "weight_taels": "น้ำหนัก (ตำลึง)",
+    "fineness": "เปอร์เซ็นต์ทอง",
+    "fineness_options": {
+      "select_one": "เลือกเปอร์เซ็นต์ทอง...",
+      "select_ledger_first": "กรุณาเลือกประเภททองก่อน"
+    },
+    "calculated_loss_grams": "ทองสูญเสีย (กรัม)",
+    "calculated_loss_percent": "ทองสูญเสีย (%)",
+    "calculated_loss_percent_placeholder": "เช่น 0.5",
+    "counterpart": "คู่ค้า",
+    "shipping_agent": "บริษัทขนส่ง",
+    "status": "สถานะ",
+    "status_options": {
+      "select_one": "เลือกสถานะ...",
+      "select_direction_first": "กรุณาเลือกทิศทางก่อน",
+      "purchased": "Purchased (ซื้อแล้ว)",
+      "received": "Received (รับแล้ว)",
+      "invoiced": "Invoiced (วางบิลแล้ว)",
+      "returned": "Returned (ตีกลับ)"
+    },
+    "good_details": "รายละเอียดสินค้า"
+  },
+  "search": {
+    "from": "จากวันที่",
+    "to": "ถึงวันที่",
+    "reference": "เลขอ้างอิง",
+    "submit": "ค้นหา",
+    "clear": "ล้างการค้นหา",
+    "all": "ทั้งหมด",
+    "category": "หมวดหมู่",
+    "ledger": "ประเภททอง",
+    "gold_out_min": "ทองออก (ขั้นต่ำ)",
+    "gold_out_max": "ทองออก (สูงสุด)",
+    "calculated_loss": "เปอร์เซ็นต์สูญเสีย (%)",
+    "shipping_agent": "ขนส่ง",
+    "counterpart": "คู่ค้า",
+    "fineness": "เปอร์เซ็นต์ทอง",
+    "select_ledger_first": "เลือกประเภททองก่อน"
+  }
+}

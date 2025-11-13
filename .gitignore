@@ -1,0 +1,128 @@
+# ------------------------------------------------------------
+# 🔹 Node.js & Dependencies
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ------------------------------------------------------------
+# 🔹 Build & Cache Outputs
+# ------------------------------------------------------------
+dist/
+build/
+.cache/
+.temp/
+out/
+.vite/
+.next/
+*.tsbuildinfo
+
+# ------------------------------------------------------------
+# 🔹 Environment Files
+# ------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+
+# ------------------------------------------------------------
+# 🔹 Logs & Coverage
+# ------------------------------------------------------------
+logs/
+*.log
+coverage/
+*.lcov
+.jest/
+jest-html-reporters-*
+test-output/
+
+# ------------------------------------------------------------
+# 🔹 Docker
+# ------------------------------------------------------------
+# ถ้าใช้ Docker volumes หรือ build cache
+**/persist/
+**/tmp/
+**/.docker/
+**/docker-data/
+*.pid
+*.seed
+*.tar
+*.sql
+*.db
+*.sqlite
+*.bak
+
+# ------------------------------------------------------------
+# 🔹 IDE / Editor Configs
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# ------------------------------------------------------------
+# 🔹 OS-Specific
+# ------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ------------------------------------------------------------
+# 🔹 Miscellaneous Temporary Files
+# ------------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+
+# ------------------------------------------------------------
+# 🔹 Optional Frontend / Backend Specific
+# ------------------------------------------------------------
+# Frontend build
+frontend/node_modules/
+frontend/dist/
+
+# Backend build
+backend/node_modules/
+backend/dist/
+backend/logs/
+
+# ------------------------------------------------------------
+# 🔹 Ignore secrets & personal configs
+# ------------------------------------------------------------
+*.pem
+*.crt
+*.key
+*.cert
+*.pfx
+*.pub
+*.pem
+*.csr
+
+# ------------------------------------------------------------
+# 🔹 VSCode only keep extensions/settings if you want
+# ------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ------------------------------------------------------------
+# ✅ Custom
+# ------------------------------------------------------------
+# Database dump & migration scripts
+dump.sql
+init-db/*.sql~
+*.orig

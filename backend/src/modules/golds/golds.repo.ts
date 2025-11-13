@@ -3,7 +3,7 @@ import debugFactory from "debug";
 import { PoolClient } from "pg";
 
 import { pool } from "../../db/pool";
-import { Category, CreateGoldDto, GoldRecord, UpdateGoldDto } from "../../types/golds";
+import { CreateGoldDto, GoldRecord, Ledger, UpdateGoldDto } from "../../types/golds";
 
 const log = debugFactory("app:repo:golds");
 const GOLD_RECORD = `gold_record`;
@@ -12,17 +12,22 @@ const GOLD_RECORD = `gold_record`;
 
 export type RepoFindParams = {
   // พารามิเตอร์สำหรับค้นหาและกรอง
-  from?: Date | null;                 // กรอกตามวันที่เริ่มต้น
-  to?: Date | null;                   // กรอกตามวันที่สิ้นสุด
-  reference_number?: string | null;   // ค้นหาตามเลขอ้างอิง (แบบ fuzzy)
-  category?: Category | string | null; // กรองตามหมวดหมู่
-  ledger?: string | null;              // กรองตามสมุดบัญชี
+  from?: Date | null;                       // กรอกตามวันที่เริ่มต้น
+  to?: Date | null;                         // กรอกตามวันที่สิ้นสุด
+  reference_number?: string | null;         // ค้นหาตามเลขอ้างอิง (แบบ fuzzy)
+  ledger?: Ledger;                          // กรองตามสมุดบัญชี
+  counterpart?: string | null;              // คู่ค้า/ลูกค้า Supplier or Customer
+  fineness?: number | null;                 // Gold Karat or Material (ความบริสุทธิ์ของทอง 24k)
+  shipping_agent?: string | null;           // เช่น Fedex, RK International ฯลฯ
+  status?: string | null;                   // เช่น "Purchased", "Invoiced", "Returned"
 
   // กรองตามปริมาณทองคำ
   gold_out_min?: number | null; // ปริมาณทองออกขั้นต่ำ
   gold_out_max?: number | null; // ปริมาณทองออกสูงสุด
   net_gold_min?: number | null; // ปริมาณทองสุทธิขั้นต่ำ
   net_gold_max?: number | null; // ปริมาณทองสุทธิสูงสุด
+
+  calculated_loss?: number | null; // น้ำหนักทองที่สูญเสียระหว่างการผลิต
 
   // พารามิเตอร์สำหรับการแบ่งหน้าและเรียงลำดับ
   limit?: number; // จำนวนรายการต่อหน้า
@@ -49,23 +54,44 @@ function buildWhere(params: RepoFindParams) {
     i++;
   }
 
-  // การค้นหาแบบ ILIKE สำหรับ reference_number
+  /**
+   * ค้นหาแบบ ILIKE
+   */
+  // เงื่อนไขสำหรับ reference_number
   if (params.reference_number) {
     where.push(`reference_number ILIKE '%' || $${i} || '%'`);
     values.push(params.reference_number);
     i++;
   }
-
-  // เงื่อนไขสำหรับ category และ ledger
-  if (params.category) {
-    where.push(`category = $${i}`);
-    values.push(params.category);
+  // เงื่อนไขสำหรับ Counterpart
+  if (params.counterpart) {
+    where.push(`counterpart ILIKE '%' || $${i} || '%'`);
+    values.push(params.counterpart);
     i++;
   }
+  // งื่อนไขสำหรับ status
+  if (params.status) {
+    where.push(`status ILIKE '%' || $${i++} || '%'`);
+    values.push(params.status);
+  }
+
+
+  /**
+   * ค้นหาแบบ =
+   */
+  // เงื่อนไขสำหรับ ledger
   if (params.ledger) {
     where.push(`ledger = $${i}`);
     values.push(params.ledger);
     i++;
+  }
+  if (params.fineness) {
+    where.push(`fineness = $${i++}`);
+    values.push(params.fineness);
+  }
+  if (params.shipping_agent) {
+    where.push(`shipping_agent = $${i++}`);
+    values.push(params.shipping_agent);
   }
 
   // เงื่อนไขสำหรับปริมาณทอง
@@ -90,6 +116,12 @@ function buildWhere(params: RepoFindParams) {
     i++;
   }
 
+  if (params.calculated_loss != null) {
+    where.push(`calculated_loss = $${i}`);
+    values.push(params.calculated_loss);
+    i++;
+  }
+
   // สร้าง WHERE clause
   const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
   return { clause, values, nextIndex: i };
@@ -108,10 +140,7 @@ export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord
 
   // สร้าง SQL query สำหรับดึงข้อมูล
   const listSql = `
-  SELECT id, timestamp_tz, reference_number, details,
-           gold_in_grams, gold_out_grams, net_gold_grams,
-           calculated_loss, remarks, category, ledger,
-           created_at, updated_at
+  SELECT *
     FROM ${GOLD_RECORD}
     ${clause}
     ${orderBy}
@@ -125,8 +154,9 @@ export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord
   // ทำ query พร้อมกันทั้งสองอัน
   const [listRes, countRes] = await Promise.all([
     pool.query<GoldRecord>(listSql, listValues),
-    pool.query<{ total: string}>(countSql, values),
+    pool.query<{ total: string }>(countSql, values),
   ]);
+  log("listSql ", listSql);
 
   const items = listRes.rows;
   const total = Number(countRes.rows[0]?.total ?? 0);
@@ -137,7 +167,7 @@ export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord
 export async function findGoldsById(id: string): Promise<GoldRecord | null> {
   log("findGoldsById %s", id);
   const { rows } = await pool.query(
-    `SELECT id, timestamp_tz, reference_number, details,
+    `SELECT id, timestamp_tz, reference_number,
             gold_in_grams, gold_out_grams, net_gold_grams,
             calculated_loss, remarks, category, ledger,
             created_at, updated_at
@@ -153,25 +183,29 @@ export async function insertGold(
   dto: CreateGoldDto
 ): Promise<GoldRecord> {
   log(`insertGold %o`, dto);
+
   const {
     timestamp_tz,
     reference_number,
-    details,
+    ledger = null,
     gold_in_grams,
     gold_out_grams = 0,
+    related_reference_number,
     calculated_loss = null,
-    remarks = null,
-    category,
-    ledger = null,
+    counterpart,
+    fineness,
+    good_details,
+    status,
+    shipping_agent,
+    remarks = null
   } = dto;
 
   const query = `
     INSERT INTO gold_record (
-      timestamp_tz, reference_number, details, gold_in_grams, gold_out_grams, calculated_loss, remarks, category, ledger
+      timestamp_tz, reference_number, ledger, gold_in_grams, gold_out_grams, remarks, calculated_loss, related_reference_number, counterpart, fineness, good_details, status, shipping_agent
     )
     VALUES (
-      COALESCE($1::timestamptz, NOW()),
-      $2,$3,$4,$5,$6,$7,$8,$9
+      COALESCE($1::timestamptz, NOW()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
     )
     RETURNING *;
   `;
@@ -181,15 +215,19 @@ export async function insertGold(
   log(`SQL Query: %s${query}`);
 
   const { rows } = await c.query(query, [
-    timestamp_tz,
-    reference_number,
-    details,
-    gold_in_grams,
-    gold_out_grams,
-    calculated_loss,
-    remarks,
-    category,
-    ledger,
+    timestamp_tz,     // $1
+    reference_number, // $2
+    ledger,           // $3
+    gold_in_grams,    // $4
+    gold_out_grams,   // $5
+    remarks,          // $7
+    calculated_loss,  // $8 (เป็น "กรัม")
+    related_reference_number, // $9
+    counterpart,      // $10
+    fineness,         // $11
+    good_details,     // $12
+    status,           // $13
+    shipping_agent,   // $14
   ]);
 
   log("Inserted result id=%s", rows[0]?.id);
@@ -219,7 +257,6 @@ export async function updateGold(
     pushFnHelper("timestamp_tz", dto.timestamp_tz);
   if (dto.reference_number !== undefined)
     pushFnHelper("reference_number", dto.reference_number);
-  if (dto.details !== undefined) pushFnHelper("details", dto.details);
   if (dto.gold_in_grams !== undefined)
     pushFnHelper("gold_in_grams", dto.gold_in_grams);
   if (dto.gold_out_grams !== undefined)
@@ -227,7 +264,6 @@ export async function updateGold(
   if (dto.calculated_loss !== undefined)
     pushFnHelper("calculated_loss", dto.calculated_loss);
   if (dto.remarks !== undefined) pushFnHelper("remarks", dto.remarks);
-  if (dto.category !== undefined) pushFnHelper("category", dto.category);
   if (dto.ledger !== undefined) pushFnHelper("ledger", dto.ledger);
 
   if (fields.length === 0) {
@@ -277,4 +313,20 @@ export async function deleteGold(
     log("deleteGold failed id=%s (not found)", id);
   }
   return success;
+}
+
+/**
+ * (เพิ่มฟังก์ชันนี้)
+ * ตรวจสอบว่า reference_number นี้มีอยู่ในฐานข้อมูลหรือไม่
+ * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
+ * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
+ */
+export async function checkReferenceExists(reference: string): Promise<boolean> {
+  log("checkReferenceExists reference=%s", reference);
+  const res = await pool.query(
+    `SELECT 1 FROM gold_record WHERE reference_number = $1 LIMIT 1`,
+    [reference]
+  );
+  // rowCount can be null in some typings/environments; coalesce to 0 before comparison
+  return (res.rowCount ?? 0) > 0;
 }
