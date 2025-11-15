@@ -11,30 +11,35 @@ const LEDGERS = [
   "PV Fine Gold",
 ] as const;
 
+// (Fineness Maps - เหมือนใน GoldForm)
+export const FINENESS_MAP_GOLD = [
+  { label: '8K', value: 333 },
+  { label: '9K', value: 375 },
+  { label: '10K', value: 417 },
+  { label: '18K', value: 750 },
+  { label: '22K', value: 916 },
+  { label: '23K', value: 958 },
+  { label: '24K', value: 999 },
+]; 
+export const FINENESS_MAP_PALLADIUM = [
+  { label: '14%', value: 140 },
+  { label: '95%', value: 950 },
+];
+export const FINENESS_MAP_PLATINUM = [
+  { label: '14%', value: 140 },
+  { label: '95%', value: 950 },
+];
 const SHIPPING_AGENT = [
-  "FedEx",
-  "DHL",
-  "RK International",
-  "Ferrari",
-  "Brinks",
-  "Kerry Express",
-  "Flash Express",
-  "Thailand Post",
-  "Others",
+    "FedEx",
+    "DHL",
+    "RK International",
+    "Ferrari",
+    "Brinks",
+    "Kerry Express",
+    "Flash Express",
+    "Thailand Post",
+    "Others",
 ] as const;
-
-const FINENESS_GOLD = [
-  "8K",
-  "9K",
-  "10K",
-  "18K",
-  "22K",
-  "23K",
-  "24K",
-  "Other",
-] as const;
-const FINENESS_PALLADIUM = ["14%", "95%", "Other"] as const;
-const FINENESS_PLATINUM = ["14%", "95%", "Other"] as const;
 
 // กำหนดค่าเริ่มต้นสำหรับ Reset
 const initialState = {
@@ -92,13 +97,13 @@ export default function SearchBar({
         "PV Fine Gold",
       ].includes(ledger)
     ) {
-      return FINENESS_GOLD;
+      return FINENESS_MAP_GOLD;
     }
     if (ledger === "Palladium") {
-      return FINENESS_PALLADIUM;
+      return FINENESS_MAP_PALLADIUM;
     }
     if (ledger === "Platinum") {
-      return FINENESS_PLATINUM;
+      return FINENESS_MAP_PLATINUM;
     }
     return [];
   }, [filters.ledger]);
@@ -211,8 +216,8 @@ export default function SearchBar({
             {filters.ledger ? t("search.all") : t("search.select_ledger_first")}
           </option>
           {finenessOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.label} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>

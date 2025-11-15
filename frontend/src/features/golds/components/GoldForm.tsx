@@ -21,8 +21,6 @@ const LEDGERS = [
 // (Constants สำหรับ Status/Fineness)
 const STATUS_OPTIONS_IN = ["Purchased", "Received"] as const;
 const STATUS_OPTIONS_OUT = ["Invoiced", "Returned"] as const;
-// ✅ (อัปเดต) 1. สร้าง Constants สำหรับ Fineness (Object Mapping)
-export const FINENESS_MAGIC_OTHER = 0; // 👈 (Magic number สำหรับ 'Other')
 
 // (กลุ่ม Gold)
 export const FINENESS_MAP_GOLD = [
@@ -32,20 +30,17 @@ export const FINENESS_MAP_GOLD = [
   { label: "18K", value: 750 },
   { label: "22K", value: 916 },
   { label: "23K", value: 958 },
-  { label: "24K", value: 999.9 },
-  { label: "Other", value: FINENESS_MAGIC_OTHER },
+  { label: "24K", value: 999 }
 ];
 // (กลุ่ม Palladium)
 export const FINENESS_MAP_PALLADIUM = [
   { label: "14%", value: 140 },
-  { label: "95%", value: 950 },
-  { label: "Other", value: FINENESS_MAGIC_OTHER },
+  { label: "95%", value: 950 }
 ];
 // (กลุ่ม Platinum)
 export const FINENESS_MAP_PLATINUM = [
   { label: "14%", value: 140 },
-  { label: "95%", value: 950 },
-  { label: "Other", value: FINENESS_MAGIC_OTHER },
+  { label: "95%", value: 950 }
 ];
 
 // Lists สำหรับ Dropdown (ตาม Requirement ใหม่)
@@ -678,34 +673,9 @@ export default function GoldForm({
         />
       </div>
 
-      {/* --- แถวที่ 5 --- */}
-      {/* Net Gold Read-only */}
-      <div className="md:col-span-2">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.net_gold")} (Read-only){" "}
-        </label>
-        <div
-          className={`rounded-md p-3 text-sm ${
-            netGold === 0
-              ? "bg-gray-100 text-gray-800"
-              : netGold < 0
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700"
-          }`}
-        >
-          <span className="font-semibold">
-            {netGold >= 0 ? "+" : ""}
-            {Number.isNaN(netGold) ? "0.000" : netGold.toFixed(3)} g
-          </span>
-          <span className="ml-4 text-gray-500">
-            (IN: {goldIn.toFixed(3)} g • OUT: {goldOut.toFixed(3)} g)
-          </span>
-        </div>
-      </div>
 
       {/* Buttons */}
-      <div className="md:col-span-2 flex justify-end gap-2 self-end">
+      <div className="md:col-span-4 flex justify-end gap-2 self-end">
         <button
           type="button"
           className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200 "

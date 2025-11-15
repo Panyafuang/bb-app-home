@@ -1,59 +1,63 @@
-export type Ledger = 'Beauty Bijoux' | 'Green Gold' | 'Palladium' | 'Platinum' | 'PV Accessories' | 'PV Fine Gold';
+export type Ledger =
+  | "Beauty Bijoux"
+  | "Green Gold"
+  | "Palladium"
+  | "Platinum"
+  | "PV Accessories"
+  | "PV Fine Gold";
 
 export const LEDGER_LIST = [
-  'Beauty Bijoux', 'Green Gold', 'Palladium', 'Platinum', 'PV Accessories', 'PV Fine Gold'
+  "Beauty Bijoux",
+  "Green Gold",
+  "Palladium",
+  "Platinum",
+  "PV Accessories",
+  "PV Fine Gold",
 ] as const;
 
-// ✅ (เพิ่มใหม่) 1. Constants สำหรับ Fineness (Numeric)
-export const FINENESS_MAGIC_OTHER = 0; // 👈 (Magic number สำหรับ 'Other')
-
 // (กลุ่ม Gold)
-export const FINENESS_GOLD_NUMERIC = [
-  333, 375, 585, 750, 950, 999, FINENESS_MAGIC_OTHER
-];
+export const FINENESS_GOLD_NUMERIC = [333, 375, 585, 750, 950, 999];
 // (กลุ่ม Palladium)
-export const FINENESS_PALLADIUM_NUMERIC = [
-  140, 950, FINENESS_MAGIC_OTHER
-];
+export const FINENESS_PALLADIUM_NUMERIC = [140, 950];
 // (กลุ่ม Platinum)
-export const FINENESS_PLATINUM_NUMERIC = [
-  140, 950, FINENESS_MAGIC_OTHER
-];
+export const FINENESS_PLATINUM_NUMERIC = [140, 950];
 // (รวม Unique Values ทั้งหมดสำหรับ Validator)
-export const ALL_FINENESS_VALUES_NUMERIC = [...new Set([
-  ...FINENESS_GOLD_NUMERIC, 
-  ...FINENESS_PALLADIUM_NUMERIC, 
-  ...FINENESS_PLATINUM_NUMERIC
-])];
+export const ALL_FINENESS_VALUES_NUMERIC = [
+  ...new Set([
+    ...FINENESS_GOLD_NUMERIC,
+    ...FINENESS_PALLADIUM_NUMERIC,
+    ...FINENESS_PLATINUM_NUMERIC,
+  ]),
+];
 
 export type LedgerEnum = (typeof LEDGER_LIST)[number];
 
 // GoldRecord Interface
 export interface GoldRecord {
-  id: string;                               // Primary key ของแต่ละรายการทองคำ
-  timestamp_tz: string;                     // เวลาที่บันทึกการทำรายการทอง
-  reference_number: string;                 // หมายเลขอ้างอิงเอกสาร เช่น ใบรับทอง, ใบส่งผลิต
-  related_reference_number: string | null;  // หมายเลขอ้างอิงของเอกสาร/ธุรกรรมที่เกี่ยวข้อง
-  gold_in_grams: number;                    // น้ำหนักทองที่รับเข้า (หน่วย: กรัม)
-  gold_out_grams: number;                   // น้ำหนักทองที่จ่ายออก (หน่วย: กรัม)
-  net_gold_grams: number;                   // คำนวณอัตโนมัติ (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
-  calculated_loss: number | null;           // น้ำหนักทองที่สูญเสียระหว่างการผลิต
-  ledger: Ledger;                           // (ใช้ Enum ใหม่)
-  counterpart: string | null;               // คู่ค้า/ลูกค้า/คู่ธุรกรรม
-  fineness: number | null;                  // ความบริสุทธิ์ของทอง (0.999 = 24k, 0.750 = 18k ฯลฯ)
-  good_details: string | null;              // รายละเอียดสินค้า เช่น "chain, sample, casting"
-  status: string | null;                    // เช่น "Purchased", "Invoiced", "Returned"
-  shipping_agent: string | null;            // ผู้ให้บริการขนส่ง/โลจิสติกส์
-  remarks: string | null;                   // หมายเหตุ เช่น เหตุผลการรับ/จ่ายทอง
-  created_at: string;                       // วันที่สร้างข้อมูล
-  updated_at: string;                       // วันที่แก้ไขข้อมูลล่าสุด (อัปเดตอัตโนมัติผ่าน Trigger)
+  id: string; // Primary key ของแต่ละรายการทองคำ
+  timestamp_tz: string; // เวลาที่บันทึกการทำรายการทอง
+  reference_number: string; // หมายเลขอ้างอิงเอกสาร เช่น ใบรับทอง, ใบส่งผลิต
+  related_reference_number: string | null; // หมายเลขอ้างอิงของเอกสาร/ธุรกรรมที่เกี่ยวข้อง
+  gold_in_grams: number; // น้ำหนักทองที่รับเข้า (หน่วย: กรัม)
+  gold_out_grams: number; // น้ำหนักทองที่จ่ายออก (หน่วย: กรัม)
+  net_gold_grams: number; // คำนวณอัตโนมัติ (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
+  calculated_loss: number | null; // น้ำหนักทองที่สูญเสียระหว่างการผลิต
+  ledger: Ledger; // (ใช้ Enum ใหม่)
+  counterpart: string | null; // คู่ค้า/ลูกค้า/คู่ธุรกรรม
+  fineness: number | null; // ความบริสุทธิ์ของทอง (0.999 = 24k, 0.750 = 18k ฯลฯ)
+  good_details: string | null; // รายละเอียดสินค้า เช่น "chain, sample, casting"
+  status: string | null; // เช่น "Purchased", "Invoiced", "Returned"
+  shipping_agent: string | null; // ผู้ให้บริการขนส่ง/โลจิสติกส์
+  remarks: string | null; // หมายเหตุ เช่น เหตุผลการรับ/จ่ายทอง
+  created_at: string; // วันที่สร้างข้อมูล
+  updated_at: string; // วันที่แก้ไขข้อมูลล่าสุด (อัปเดตอัตโนมัติผ่าน Trigger)
 }
 
 // DTO สำหรับการสร้าง (อิงตามฟอร์ม Input ใหม่)
 export interface CreateGoldDto {
-  timestamp_tz: string;       // จากฟอร์ม Date (optional, default now)
-  reference_number: string;   // จากฟอร์ม Ref Number
-  ledger: Ledger;         // จากฟอร์ม Ledger
+  timestamp_tz: string; // จากฟอร์ม Date (optional, default now)
+  reference_number: string; // จากฟอร์ม Ref Number
+  ledger: Ledger; // จากฟอร์ม Ledger
   gold_in_grams: number;
   gold_out_grams: number;
 

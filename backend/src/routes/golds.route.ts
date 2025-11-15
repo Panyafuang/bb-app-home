@@ -7,7 +7,6 @@ import * as goldsController from "../controllers/golds.controller";
 import { validateRequest } from "../middlewares/validate-request";
 import {
     LEDGER_LIST,
-    FINENESS_MAGIC_OTHER,
     FINENESS_GOLD_NUMERIC,
     FINENESS_PALLADIUM_NUMERIC,
     FINENESS_PLATINUM_NUMERIC,
@@ -15,15 +14,13 @@ import {
 } from "../types/golds";
 
 const router = Router();
+
+
 // status (import, export)
 const STATUS_LIST_IN = ['purchased', 'received'];
 const STATUS_LIST_OUT = ['invoiced', 'returned'];
-// Fineness
-// const FINENESS_GOLD = ['8K', '9K', '10K', '18K', '22K', '23K', '24K', 'Other'];
-// const FINENESS_PALLADIUM = ['14%', '95%', 'Other'];
-// const FINENESS_PLATINUM = ['14%', '95%', 'Other'];
 
-// const ALL_FINENESS_VALUES = [...new Set([...FINENESS_GOLD, ...FINENESS_PALLADIUM, ...FINENESS_PLATINUM])];
+
 const SHIPPING_AGENT = [
     "FedEx",
     "DHL",
@@ -107,7 +104,7 @@ const createGoldValidation = [
             }
             return true;
         }),
-    body("status").optional({ checkFalsy: true }).trim().isString()
+    body("status").optional({ checkFalsy: true }).trim().isString().toLowerCase()
         .custom((value, { req }) => {
             if (!value) return true; // ถ้าไม่ส่งมา (optional) ก็ถือว่าผ่าน
 
@@ -120,7 +117,7 @@ const createGoldValidation = [
                 if (!STATUS_LIST_IN.includes(value)) {
                     throw new Error(`Invalid status '${value}'. For Imports (gold_in > 0), must be 'Purchased' or 'Received'.`);
                 }
-                // Export
+            // Export
             } else if (goldOut > 0 && goldIn === 0) {
                 if (!STATUS_LIST_OUT.includes(value)) {
                     throw new Error(`Invalid status '${value}'. For Exports (gold_out > 0), must be 'Invoiced' or 'Returned'.`);

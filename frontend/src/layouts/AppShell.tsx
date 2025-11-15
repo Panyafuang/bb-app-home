@@ -14,6 +14,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   const [collapsed, setCollapsed] = useState(initialCollapsed);
 
+  // ค่าคงที่ layout
   const NAV_H = 64;
   const GAP_UNDER_NAV = 16;
   const W_COLLAPSED = 72;
@@ -26,16 +27,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     else setCollapsed((prev) => prev); // ไม่ยุ่งถ้าจอใหญ่ (คงค่าที่จำไว้)
   }, [isSmall]);
 
-  // จำค่าสถานะไว้
+  // จำค่า collapsed ไว้ใน localStorage
   useEffect(() => {
     localStorage.setItem("bbg.collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
+
+  // ⭐ Sidebar width
+  const sidebarWidth = collapsed ? W_COLLAPSED : W_EXPANDED;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onToggleSidebar={() => setSidebarOpenMobile((v) => !v)} />
       <div className="relative">
-        <aside
+        {/* <aside
           className="fixed left-0 z-30 hidden md:block border-r border-gray-100 bg-white/80 backdrop-blur"
           style={{
             top: NAV_H,
@@ -49,9 +53,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             collapsed={collapsed}
             onToggleCollapse={() => setCollapsed((v) => !v)}
           />
+        </aside> */}
+        {/* ----------------- SIDEBAR ----------------- */}
+        <aside
+          className="fixed left-0 z-30 hidden md:block border-r border-gray-100 bg-white/80 backdrop-blur"
+          style={{
+            top: NAV_H,
+            height: `calc(100vh - ${NAV_H}px)`,
+            width: sidebarWidth,
+          }}
+        >
+          <Sidebar
+            open={sidebarOpenMobile}
+            onClose={() => setSidebarOpenMobile(false)}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed((v) => !v)}
+          />
         </aside>
 
-        <main
+        {/* ----------------- MAIN CONTENT ----------------- */}
+
+        {/* <main
           // เพิ่ม flex + justify-center เพื่อจัดกึ่งกลางแนวนอน
           className="mx-auto max-w-none px-4 pb-10 sm:px-6 lg:px-8 flex justify-center"
           style={{
@@ -59,10 +81,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             marginLeft: isSmall ? 0 : collapsed ? W_COLLAPSED : W_EXPANDED,
             paddingTop: NAV_H + GAP_UNDER_NAV,
           }}
-        >
-          {/* กล่องกำหนดความกว้างสูงสุดของคอนเทนต์ */}
-          <div className="w-full max-w-screen-2xl">
+        > */}
+        {/* กล่องกำหนดความกว้างสูงสุดของคอนเทนต์ */}
+        {/* <div className="w-full max-w-screen-2xl">
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
+              {children}
+            </div>
+          </div>
+        </main> */}
+
+        <main
+          style={{
+            // ⭐⭐ NEW: ขยับ content ออกจาก sidebar โดยใช้ค่า sidebarWidth
+            marginLeft: sidebarWidth,
+
+            // ⭐⭐ NEW: ทำให้เนื้อหายืดเต็มพื้นที่ที่เหลือแบบ dynamic
+            width: `calc(100% - ${sidebarWidth}px)`,
+
+            // ระยะห่างจาก Navbar
+            paddingTop: NAV_H + GAP_UNDER_NAV,
+          }}
+          className="px-4 pb-10 sm:px-6 lg:px-8"
+        >
+          {/* ⭐⭐⭐ IMPORTANT: container ที่คุมความกว้างของเนื้อหา ⭐⭐⭐ */}
+          {/* 
+            max-w-screen-2xl = ทำให้เนื้อหากว้างขึ้นกว่าปกติ 
+            👉 ถ้าอยากกว้างสุดๆ ใช้ max-w-none 
+            👉 ถ้าอยากจำกัดกลางๆ ใช้ max-w-screen-xl 
+          */}
+          <div className="mx-auto w-full max-w-none">
+            {/* 
+              ⭐ ใส่กล่องพื้นหลังของแต่ละหน้า
+              คุณสามารถลบกรอบขาวนี้ออกได้ ถ้าอยากให้หน้าดิบแบบ dashboard 
+            */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               {children}
             </div>
           </div>

@@ -72,27 +72,27 @@ export default function RecordsTable({
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="text-sm text-gray-700 uppercase bg-gray-50">
           <tr>
-            <th className="px-4 py-3">{t("table.date")}</th>
-            <th className="px-4 py-3 min-w-[190px]">{t("table.ledger")}</th>
-            <th className="px-4 py-3 min-w-[180px]">{t("table.reference")}</th>
-            <th className="px-4 py-3 min-w-[180px]">
+            <th className="border border-gray-200 px-4 py-3">{t("table.date")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[180px]">{t("table.ledger")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[180px]">{t("table.reference")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[180px]">
               {t("table.related_reference_number")}
             </th>
-            <th className="px-4 py-3">{t("table.direction")}</th>
-            <th className="px-4 py-3 text-center">{t("table.weight")}</th>
-            <th className="px-4 py-3 min-w-[220px]">
+            <th className="border border-gray-200 px-4 py-3">{t("table.direction")}</th>
+            <th className="border border-gray-200 px-4 py-3 text-center">{t("table.weight")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[220px]">
               {t("table.counterpart")}
             </th>
-            <th className="px-4 py-3">{t("table.fineness")}</th>
-            <th className="px-4 py-3">{t("table.status")}</th>
-            <th className="px-4 py-3 min-w-[200px]">
+            <th className="border border-gray-200 px-4 py-3">{t("table.fineness")}</th>
+            <th className="border border-gray-200 px-4 py-3">{t("table.status")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[200px]">
               {t("table.good_details")}
             </th>
-            <th className="px-4 py-3">{t("table.shipping_agent")}</th>
-            <th className="px-4 py-3 text-center">
+            <th className="border border-gray-200 px-4 py-3">{t("table.shipping_agent")}</th>
+            <th className="border border-gray-200 px-4 py-3 text-center">
               {t("table.calculated_loss")}
             </th>
-            <th className="px-4 py-3 min-w-[220px]">{t("table.remarks")}</th>
+            <th className="border border-gray-200 px-4 py-3 min-w-[220px]">{t("table.remarks")}</th>
             <th className="sticky right-0 bg-gray-50 px-2 py-3 text-center">
               {t("table.actions")}
             </th>
@@ -114,18 +114,18 @@ export default function RecordsTable({
                   key={i}
                   className="bg-white border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4">
+                  <td className="border border-gray-200 px-6 py-4">
                     {formatDate(r.timestamp_tz, i18n.language)}
                   </td>
-                  <td className="px-6 py-4 min-w-[190px]">{r.ledger}</td>
-                  <td className="px-6 py-4 min-w-[180px]">
+                  <td className="border border-gray-200 px-6 py-4 min-w-[180px]">{r.ledger}</td>
+                  <td className="border border-gray-200 px-6 py-4 min-w-[180px]">
                     {r.reference_number}
                   </td>
-                  <td className="px-6 py-4 min-w-[180px]">
+                  <td className="border border-gray-200 px-6 py-4 min-w-[180px]">
                     {r.related_reference_number}
                   </td>
                   <td
-                    className={`px-6 py-4 ${
+                    className={`border border-gray-200 px-6 py-4 ${
                       Number(r.gold_out_grams) > 0
                         ? "text-red-600"
                         : "text-green-700"
@@ -144,7 +144,7 @@ export default function RecordsTable({
                     )}
                   </td>
                   <td
-                    className={`px-6 py-4 text-right ${
+                    className={`border border-gray-200 px-6 py-4 text-right ${
                       Number(r.gold_out_grams) > 0
                         ? "text-red-600"
                         : "text-green-700"
@@ -152,12 +152,12 @@ export default function RecordsTable({
                   >
                     {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
                   </td>
-                  <td className="px-6 py-4 min-w-[220px]">{r.counterpart}</td>
-                  <td className="px-6 py-4">{r.fineness}</td>
-                  <td className="px-6 py-4">{r.status}</td>
-                  <td className="px-6 py-4 min-w-[200px]">{r.good_details}</td>
-                  <td className="px-6 py-4">{r.shipping_agent}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="border border-gray-200 px-6 py-4 min-w-[220px]">{r.counterpart}</td>
+                  <td className="border border-gray-200 px-6 py-4">{r.fineness}</td>
+                  <td className="border border-gray-200 px-6 py-4">{r.status}</td>
+                  <td className="border border-gray-200 px-6 py-4 min-w-[200px]">{r.good_details}</td>
+                  <td className="border border-gray-200 px-6 py-4">{r.shipping_agent}</td>
+                  <td className="border border-gray-200 px-6 py-4 text-right">
                     {r.calculated_loss != null
                       ? `${(r.calculated_loss * 100).toFixed(2)}%`
                       : ""}
@@ -173,9 +173,9 @@ export default function RecordsTable({
                     {r.net_gold_grams}
                   </td> */}
 
-                  <td className="px-6 py-4 min-w-[220px]">{r.remarks}</td>
+                  <td className="border border-gray-200 px-6 py-4 min-w-[220px]">{r.remarks}</td>
                   {/* <td className="px-6 py-4"> */}
-                  <td className="sticky right-0 bg-gray-50 px-6 py-4 hover:bg-gray-50">
+                  <td className="border border-gray-200 sticky right-0 bg-gray-50 px-6 py-4 hover:bg-gray-50">
                     <div className="flex justify-end">
                       <button
                         title={t("table.edit") || "Edit"}
