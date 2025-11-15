@@ -126,3 +126,4 @@ backend/logs/
 dump.sql
 init-db/*.sql~
 *.orig
+.DB_Store

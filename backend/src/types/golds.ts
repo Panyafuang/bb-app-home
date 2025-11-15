@@ -4,6 +4,28 @@ export const LEDGER_LIST = [
   'Beauty Bijoux', 'Green Gold', 'Palladium', 'Platinum', 'PV Accessories', 'PV Fine Gold'
 ] as const;
 
+// ✅ (เพิ่มใหม่) 1. Constants สำหรับ Fineness (Numeric)
+export const FINENESS_MAGIC_OTHER = 0; // 👈 (Magic number สำหรับ 'Other')
+
+// (กลุ่ม Gold)
+export const FINENESS_GOLD_NUMERIC = [
+  333, 375, 585, 750, 950, 999, FINENESS_MAGIC_OTHER
+];
+// (กลุ่ม Palladium)
+export const FINENESS_PALLADIUM_NUMERIC = [
+  140, 950, FINENESS_MAGIC_OTHER
+];
+// (กลุ่ม Platinum)
+export const FINENESS_PLATINUM_NUMERIC = [
+  140, 950, FINENESS_MAGIC_OTHER
+];
+// (รวม Unique Values ทั้งหมดสำหรับ Validator)
+export const ALL_FINENESS_VALUES_NUMERIC = [...new Set([
+  ...FINENESS_GOLD_NUMERIC, 
+  ...FINENESS_PALLADIUM_NUMERIC, 
+  ...FINENESS_PLATINUM_NUMERIC
+])];
+
 export type LedgerEnum = (typeof LEDGER_LIST)[number];
 
 // GoldRecord Interface
@@ -18,7 +40,7 @@ export interface GoldRecord {
   calculated_loss: number | null;           // น้ำหนักทองที่สูญเสียระหว่างการผลิต
   ledger: Ledger;                           // (ใช้ Enum ใหม่)
   counterpart: string | null;               // คู่ค้า/ลูกค้า/คู่ธุรกรรม
-  fineness: string | null;                  // ความบริสุทธิ์ของทอง (0.999 = 24k, 0.750 = 18k ฯลฯ)
+  fineness: number | null;                  // ความบริสุทธิ์ของทอง (0.999 = 24k, 0.750 = 18k ฯลฯ)
   good_details: string | null;              // รายละเอียดสินค้า เช่น "chain, sample, casting"
   status: string | null;                    // เช่น "Purchased", "Invoiced", "Returned"
   shipping_agent: string | null;            // ผู้ให้บริการขนส่ง/โลจิสติกส์
@@ -37,7 +59,7 @@ export interface CreateGoldDto {
 
   // Fields Optional
   calculated_loss?: number | null; // (เป็น "กรัม" แต่ front-end กรอกเป็น % แปลงเป็นกรัมจาก front-end)
-  fineness: string | null;
+  fineness: number | null;
   counterpart: string | null;
   good_details: string | null;
   status: string | null;

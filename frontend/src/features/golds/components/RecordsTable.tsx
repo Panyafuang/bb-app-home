@@ -9,9 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useDeleteGold } from "@/features/golds/hooks/useDeleteGold"; // Custom Hook จาก React Query
 import { formatDate } from "@/utils/date";
 
-/**
- * เพิ่มคอลัมน์ "#" โดยคำนวณจาก (page-1)*limit + index + 1
- */
+
 export default function RecordsTable({
   rows,
   loading = false,
@@ -81,6 +79,7 @@ export default function RecordsTable({
               {t("table.related_reference_number")}
             </th>
             <th className="px-4 py-3">{t("table.direction")}</th>
+            <th className="px-4 py-3 text-center">{t("table.weight")}</th>
             <th className="px-4 py-3 min-w-[220px]">
               {t("table.counterpart")}
             </th>
@@ -90,7 +89,6 @@ export default function RecordsTable({
               {t("table.good_details")}
             </th>
             <th className="px-4 py-3">{t("table.shipping_agent")}</th>
-            <th className="px-4 py-3 text-center">{t("table.weight")}</th>
             <th className="px-4 py-3 text-center">
               {t("table.calculated_loss")}
             </th>
@@ -145,11 +143,6 @@ export default function RecordsTable({
                       </>
                     )}
                   </td>
-                  <td className="px-6 py-4 min-w-[220px]">{r.counterpart}</td>
-                  <td className="px-6 py-4">{r.fineness}</td>
-                  <td className="px-6 py-4">{r.status}</td>
-                  <td className="px-6 py-4 min-w-[200px]">{r.good_details}</td>
-                  <td className="px-6 py-4">{r.shipping_agent}</td>
                   <td
                     className={`px-6 py-4 text-right ${
                       Number(r.gold_out_grams) > 0
@@ -159,6 +152,11 @@ export default function RecordsTable({
                   >
                     {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
                   </td>
+                  <td className="px-6 py-4 min-w-[220px]">{r.counterpart}</td>
+                  <td className="px-6 py-4">{r.fineness}</td>
+                  <td className="px-6 py-4">{r.status}</td>
+                  <td className="px-6 py-4 min-w-[200px]">{r.good_details}</td>
+                  <td className="px-6 py-4">{r.shipping_agent}</td>
                   <td className="px-6 py-4 text-right">
                     {r.calculated_loss != null
                       ? `${(r.calculated_loss * 100).toFixed(2)}%`

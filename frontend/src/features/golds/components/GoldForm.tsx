@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 
 // (สมมติว่าคุณสร้างไฟล์นี้ตามที่เราคุยกัน)
 import { checkRefUnique as apiCheckRefUnique } from "@/api/goldsClient";
+import { getTodayISO } from "@/utils/help";
 
 // --- 1. Constants & Helpers (นอก Component) ---
-
 // (Ledger List 6 ค่า)
 const LEDGERS = [
   "Beauty Bijoux",
@@ -21,20 +21,34 @@ const LEDGERS = [
 // (Constants สำหรับ Status/Fineness)
 const STATUS_OPTIONS_IN = ["Purchased", "Received"] as const;
 const STATUS_OPTIONS_OUT = ["Invoiced", "Returned"] as const;
-const FINENESS_GOLD = [
-  "8K",
-  "9K",
-  "10K",
-  "18K",
-  "22K",
-  "23K",
-  "24K",
-  "Other",
-] as const;
-const FINENESS_PALLADIUM = ["14%", "95%", "Other"] as const;
-const FINENESS_PLATINUM = ["14%", "95%", "Other"] as const;
+// ✅ (อัปเดต) 1. สร้าง Constants สำหรับ Fineness (Object Mapping)
+export const FINENESS_MAGIC_OTHER = 0; // 👈 (Magic number สำหรับ 'Other')
 
-// ✅ (อัปเดต) 1. Lists สำหรับ Dropdown (ตาม Requirement ใหม่)
+// (กลุ่ม Gold)
+export const FINENESS_MAP_GOLD = [
+  { label: "8K", value: 333 },
+  { label: "9K", value: 375 },
+  { label: "10K", value: 417 },
+  { label: "18K", value: 750 },
+  { label: "22K", value: 916 },
+  { label: "23K", value: 958 },
+  { label: "24K", value: 999.9 },
+  { label: "Other", value: FINENESS_MAGIC_OTHER },
+];
+// (กลุ่ม Palladium)
+export const FINENESS_MAP_PALLADIUM = [
+  { label: "14%", value: 140 },
+  { label: "95%", value: 950 },
+  { label: "Other", value: FINENESS_MAGIC_OTHER },
+];
+// (กลุ่ม Platinum)
+export const FINENESS_MAP_PLATINUM = [
+  { label: "14%", value: 140 },
+  { label: "95%", value: 950 },
+  { label: "Other", value: FINENESS_MAGIC_OTHER },
+];
+
+// Lists สำหรับ Dropdown (ตาม Requirement ใหม่)
 const COUNTERPART_LIST = [
   "Nakagawa",
   "Qnet",
@@ -55,13 +69,9 @@ const SHIPPING_AGENT_LIST = [
   "Brinks",
   "Kerry Express",
   "Flash Express",
-  "Thialand Post",
+  "Thailand Post",
   "Others",
 ] as const;
-
-// ❌ (ลบ) 2. ลบ Conversion Factors
-// const GRAMS_PER_BAHT = 15.244;
-// const GRAMS_PER_TAEL = 37.5;
 
 const COMPANY_FOUNDED = "1991-03-11";
 
@@ -69,18 +79,6 @@ const COMPANY_FOUNDED = "1991-03-11";
 function isValidIsoDate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
 }
-
-/** (Helper) ดึงค่าวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD */
-function getTodayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-/** (Helper) แปลงค่าตัวเลขอย่างปลอดภัย */
-const parseNumber = (v: any): number | null => {
-  if (v == null || v === "") return null;
-  const n = Number(v);
-  return Number.isNaN(n) ? null : n;
-};
 
 // ✅ (เพิ่มใหม่) 3. นำ Helper แปลง % กลับมา (จากไฟล์เก่าของคุณ)
 /** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
@@ -105,7 +103,6 @@ async function checkReferenceUnique(reference: string): Promise<boolean> {
     return false; // (ถ้า API error ให้ถือว่าซ้ำ)
   }
 }
-// --- จบส่วน Helpers ---
 
 export default function GoldForm({
   mode,
@@ -205,9 +202,6 @@ export default function GoldForm({
         : weightNumGrams
       : 0;
 
-  // ❌ (ลบ) 7. ลบ Baht/Taels
-
-  // (Fineness Options - เหมือนเดิม)
   const finenessOptions = useMemo(() => {
     if (
       [
@@ -217,13 +211,13 @@ export default function GoldForm({
         "PV Fine Gold",
       ].includes(ledger)
     ) {
-      return FINENESS_GOLD;
+      return FINENESS_MAP_GOLD;
     }
     if (ledger === "Palladium") {
-      return FINENESS_PALLADIUM;
+      return FINENESS_MAP_PALLADIUM;
     }
     if (ledger === "Platinum") {
-      return FINENESS_PLATINUM;
+      return FINENESS_MAP_PLATINUM;
     }
     return [];
   }, [ledger]);
@@ -238,8 +232,6 @@ export default function GoldForm({
   useEffect(() => {
     /* (Reset Fineness - เหมือนเดิม) */
   }, [ledger, isInitialLoad, mode]);
-
-  // ❌ (ลบ) 9. ลบ Effect ของ Loss ทั้งสองอัน
 
   // ✅ 10. Validation Logic (useMemo)
   const errors = useMemo(() => {
@@ -398,7 +390,6 @@ export default function GoldForm({
   };
 
   return (
-    // ✅ (แก้ไข) 15. Layout 4 คอลัมน์ (จัดเรียงใหม่)
     <form
       onSubmit={submit}
       className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-4"
@@ -496,11 +487,12 @@ export default function GoldForm({
       {/* Weight (Grams) */}
       <div className="md:col-span-1">
         <label className="block text-sm font-medium">
-          {direction === "OUT"
+          {/* {direction === "OUT"
             ? t("form.weight_sent")
             : direction === "IN"
             ? t("form.weight_received")
-            : t("form.weight")}
+            : t("form.weight")} */}
+          {t("form.net_weight")}
           <span className="text-red-600"> *</span>
         </label>
         <input
@@ -516,6 +508,38 @@ export default function GoldForm({
       </div>
 
       {/* ❌ (ลบ) 16. ลบ Weight (Baht) และ Weight (Taels) */}
+      {/* Status (Dynamic Dropdown) */}
+      <div className="md:col-span-1">
+        <label className="block text-sm font-medium">
+          {" "}
+          {t("form.status")}{" "}
+        </label>
+        <select
+          className={inputStyle}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          disabled={!direction}
+        >
+          <option value="">
+            {" "}
+            {direction
+              ? t("form.status_options.select_one")
+              : t("form.status_options.select_direction_first")}{" "}
+          </option>
+          {direction === "IN" &&
+            STATUS_OPTIONS_IN.map((opt) => (
+              <option key={opt} value={opt}>
+                {t(`form.status_options.${opt.toLowerCase()}`)}
+              </option>
+            ))}
+          {direction === "OUT" &&
+            STATUS_OPTIONS_OUT.map((opt) => (
+              <option key={opt} value={opt}>
+                {t(`form.status_options.${opt.toLowerCase()}`)}
+              </option>
+            ))}
+        </select>
+      </div>
 
       {/* (ขยับ 2 ช่องนี้ขึ้นมา) */}
       <div className="md:col-span-1">
@@ -547,8 +571,8 @@ export default function GoldForm({
         </label>
         <select
           className={inputStyle}
-          value={fineness}
-          onChange={(e) => setFineness(e.target.value)}
+          value={fineness} // 👈 (State คือ "333")
+          onChange={(e) => setFineness(e.target.value)} // 👈 (Save "333")
           disabled={!ledger}
         >
           <option value="">
@@ -558,8 +582,10 @@ export default function GoldForm({
               : t("form.fineness_options.select_ledger_first")}{" "}
           </option>
           {finenessOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.label} value={option.value}>
+              {" "}
+              {/* 👈 value={333} */}
+              {option.label} {/* 👈 ผู้ใช้เห็น '8K' */}
             </option>
           ))}
         </select>
@@ -603,39 +629,6 @@ export default function GoldForm({
               {s}
             </option>
           ))}
-        </select>
-      </div>
-
-      {/* Status (Dynamic Dropdown) */}
-      <div className="md:col-span-1">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.status")}{" "}
-        </label>
-        <select
-          className={inputStyle}
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          disabled={!direction}
-        >
-          <option value="">
-            {" "}
-            {direction
-              ? t("form.status_options.select_one")
-              : t("form.status_options.select_direction_first")}{" "}
-          </option>
-          {direction === "IN" &&
-            STATUS_OPTIONS_IN.map((opt) => (
-              <option key={opt} value={opt}>
-                {t(`form.status_options.${opt.toLowerCase()}`)}
-              </option>
-            ))}
-          {direction === "OUT" &&
-            STATUS_OPTIONS_OUT.map((opt) => (
-              <option key={opt} value={opt}>
-                {t(`form.status_options.${opt.toLowerCase()}`)}
-              </option>
-            ))}
         </select>
       </div>
 

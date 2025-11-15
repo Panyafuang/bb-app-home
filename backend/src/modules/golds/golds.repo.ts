@@ -136,7 +136,8 @@ export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord
   const { clause, values, nextIndex } = buildWhere(p);
 
   // กำหนดการเรียงลำดับ
-  const orderBy = p.sort === "timestamp_tz:asc" ? `ORDER BY timestamp_tz ASC, id ASC` : `ORDER BY timestamp_tz DESC, id DESC`;
+  // const orderBy = p.sort === "timestamp_tz:asc" ? `ORDER BY timestamp_tz ASC, id ASC` : `ORDER BY timestamp_tz DESC, id DESC`;
+  const orderBy = `ORDER BY updated_at DESC`;
 
   // สร้าง SQL query สำหรับดึงข้อมูล
   const listSql = `

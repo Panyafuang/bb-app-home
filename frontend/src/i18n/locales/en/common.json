@@ -58,7 +58,8 @@
   "actions.edit": "Edit record",
   "header": {
     "main_title": "BB‑Gold — Transactions",
-    "material_report": "Raw material report"
+    "material_report": "Raw material report",
+    "transactions": "Transactions"
   },
   "validation": {
     "required": "This field is required",
@@ -121,7 +122,8 @@
       "invoiced": "Invoiced",
       "returned": "Returned"
     },
-    "good_details": "Good Details"
+    "good_details": "Good Details",
+    "net_weight": "Net Weight (g)"
   },
   "search": {
     "from": "From Date",
@@ -139,5 +141,11 @@
     "counterpart": "Counterpart",
     "fineness": "Fineness",
     "select_ledger_first": "Select Ledger First"
+  },
+  "button": {
+    "exports": {
+      "pdf": "Export PDF",
+      "csv": "Export CSV"
+    }
   }
 }

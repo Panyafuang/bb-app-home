@@ -63,7 +63,8 @@
   "actions.edit": "แก้ไขรายการ",
   "header": {
     "main_title": "BB‑Gold — ธุรกรรม",
-    "material_report": "รายงานสินค้า/วัตถุดิบ"
+    "material_report": "รายงานสินค้า/วัตถุดิบ",
+    "transactions": "รายการ"
   },
   "validation": {
     "required": "กรุณากรอกข้อมูล",
@@ -126,7 +127,8 @@
       "invoiced": "Invoiced (วางบิลแล้ว)",
       "returned": "Returned (ตีกลับ)"
     },
-    "good_details": "รายละเอียดสินค้า"
+    "good_details": "รายละเอียดสินค้า",
+    "net_weight": "น้ำหนักทอง (กรัม)"
   },
   "search": {
     "from": "จากวันที่",
@@ -144,5 +146,11 @@
     "counterpart": "คู่ค้า",
     "fineness": "เปอร์เซ็นต์ทอง",
     "select_ledger_first": "เลือกประเภททองก่อน"
+  },
+  "button": {
+    "exports": {
+      "pdf": "Export PDF",
+      "csv": "Export CSV"
+    }
   }
 }
