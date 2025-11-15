@@ -30,17 +30,17 @@ export const FINENESS_MAP_GOLD = [
   { label: "18K", value: 750 },
   { label: "22K", value: 916 },
   { label: "23K", value: 958 },
-  { label: "24K", value: 999 }
+  { label: "24K", value: 999 },
 ];
 // (กลุ่ม Palladium)
 export const FINENESS_MAP_PALLADIUM = [
   { label: "14%", value: 140 },
-  { label: "95%", value: 950 }
+  { label: "95%", value: 950 },
 ];
 // (กลุ่ม Platinum)
 export const FINENESS_MAP_PLATINUM = [
   { label: "14%", value: 140 },
-  { label: "95%", value: 950 }
+  { label: "95%", value: 950 },
 ];
 
 // Lists สำหรับ Dropdown (ตาม Requirement ใหม่)
@@ -75,7 +75,6 @@ function isValidIsoDate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
 }
 
-// ✅ (เพิ่มใหม่) 3. นำ Helper แปลง % กลับมา (จากไฟล์เก่าของคุณ)
 /** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
 function toDecimalFromPercentInput(str: string): number | null {
   if (!str) return null;
@@ -217,7 +216,6 @@ export default function GoldForm({
     return [];
   }, [ledger]);
 
-  // ✅ 8. Effects
   useEffect(() => {
     /* (Check Reference Unique - เหมือนเดิม) */
   }, [reference, mode]);
@@ -228,7 +226,7 @@ export default function GoldForm({
     /* (Reset Fineness - เหมือนเดิม) */
   }, [ledger, isInitialLoad, mode]);
 
-  // ✅ 10. Validation Logic (useMemo)
+  // Validation Logic (useMemo)
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     const today = getTodayISO();
@@ -255,7 +253,7 @@ export default function GoldForm({
 
     if (ledger.trim() === "") e.ledger = t("validation.required");
 
-    // ✅ (แก้ไข) 11. Validation ของ Loss (กลับไปเป็นแบบ %)
+    // validation ของ Loss (กลับไปเป็นแบบ %)
     if (calculatedLoss.trim() !== "") {
       const dec = toDecimalFromPercentInput(calculatedLoss);
       if (dec === null) e.calculated_loss = t("validation.loss.invalidFormat");
@@ -284,7 +282,6 @@ export default function GoldForm({
     "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
   const errorStyle = "border-red-500 ring-2 ring-red-100 border-2";
 
-  // ✅ 12. อัปเดตฟังก์ชัน Reset
   function handleReset() {
     setShowErrors(false);
     setDate(defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO());
@@ -324,7 +321,6 @@ export default function GoldForm({
     setCheckingRef(false);
   }
 
-  // ✅ 13. อัปเดตฟังก์ชัน Submit
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) {
@@ -387,10 +383,10 @@ export default function GoldForm({
   return (
     <form
       onSubmit={submit}
-      className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-4"
+      className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-12"
     >
-      {/* --- แถวที่ 1 --- */}
-      <div className="md:col-span-1">
+      {/* date */}
+      <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {" "}
           {t("form.date")} <span className="text-red-600"> *</span>{" "}
@@ -408,7 +404,59 @@ export default function GoldForm({
         <ErrorMessage field="date" />
       </div>
 
-      <div className="md:col-span-1">
+      {/* (ledger */}
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium">
+          {" "}
+          {t("form.ledger")} <span className="text-red-600"> *</span>{" "}
+        </label>
+        <select
+          className={`${inputStyle} ${
+            showErrors && errors.ledger ? errorStyle : ""
+          }`}
+          value={ledger}
+          onChange={(e) => setLedger(e.target.value)}
+        >
+          <option value="">Select…</option>
+          {LEDGERS.map((l) => (
+            <option key={l} value={l}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <ErrorMessage field="ledger" />
+      </div>
+
+      {/* fineness */}
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium">
+          {" "}
+          {t("form.fineness")}{" "}
+        </label>
+        <select
+          className={inputStyle}
+          value={fineness} // 👈 (State คือ "333")
+          onChange={(e) => setFineness(e.target.value)} // 👈 (Save "333")
+          disabled={!ledger}
+        >
+          <option value="">
+            {" "}
+            {ledger
+              ? t("form.fineness_options.select_one")
+              : t("form.fineness_options.select_ledger_first")}{" "}
+          </option>
+          {finenessOptions.map((option) => (
+            <option key={option.label} value={option.value}>
+              {" "}
+              {/* 👈 value={333} */}
+              {option.label} {/* 👈 ผู้ใช้เห็น '8K' */}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* reference number */}
+      <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {" "}
           {t("form.reference")} <span className="text-red-600"> *</span>{" "}
@@ -426,6 +474,7 @@ export default function GoldForm({
         {/* (Ref unique status - เหมือนเดิม) */}
       </div>
 
+      {/* related reference number */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {" "}
@@ -438,8 +487,41 @@ export default function GoldForm({
         />
       </div>
 
-      {/* --- แถวที่ 2 --- */}
-      <div className="md:col-span-1">
+      {/* counterpart  */}
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium">
+          {" "}
+          {t("form.counterpart")}{" "}
+        </label>
+        <select
+          className={inputStyle}
+          value={counterpart}
+          onChange={(e) => setCounterpart(e.target.value)}
+        >
+          <option value="">Select...</option>
+          {COUNTERPART_LIST.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Good Details */}
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium">
+          {t("form.good_details")}
+        </label>
+        <textarea
+          rows={1}
+          className={inputStyle}
+          value={goodDetails}
+          onChange={(e) => setGoodDetails(e.target.value)}
+        />
+      </div>
+
+      {/* direction (IN, OUT) */}
+      <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {" "}
           {t("form.direction")} <span className="text-red-600"> *</span>{" "}
@@ -454,7 +536,7 @@ export default function GoldForm({
           <button
             type="button"
             onClick={() => setDirection("IN")}
-            className={`flex-1 rounded-xl border p-2 ${
+            className={`flex-1 rounded-xl border border-gray-200 p-2 ${
               direction === "IN"
                 ? "border-green-600 ring-2 ring-green-200"
                 : "hover:bg-gray-50"
@@ -466,7 +548,7 @@ export default function GoldForm({
           <button
             type="button"
             onClick={() => setDirection("OUT")}
-            className={`flex-1 rounded-xl border p-2 ${
+            className={`flex-1 rounded-xl border border-gray-200 p-2 ${
               direction === "OUT"
                 ? "border-red-600 ring-2 ring-red-200"
                 : "hover:bg-gray-50"
@@ -502,9 +584,8 @@ export default function GoldForm({
         <ErrorMessage field="weight" />
       </div>
 
-      {/* ❌ (ลบ) 16. ลบ Weight (Baht) และ Weight (Taels) */}
-      {/* Status (Dynamic Dropdown) */}
-      <div className="md:col-span-1">
+      {/* Status */}
+      <div className="md:col-span-2">
         <label className="block text-sm font-medium">
           {" "}
           {t("form.status")}{" "}
@@ -536,98 +617,7 @@ export default function GoldForm({
         </select>
       </div>
 
-      {/* (ขยับ 2 ช่องนี้ขึ้นมา) */}
-      <div className="md:col-span-1">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.ledger")} <span className="text-red-600"> *</span>{" "}
-        </label>
-        <select
-          className={`${inputStyle} ${
-            showErrors && errors.ledger ? errorStyle : ""
-          }`}
-          value={ledger}
-          onChange={(e) => setLedger(e.target.value)}
-        >
-          <option value="">Select…</option>
-          {LEDGERS.map((l) => (
-            <option key={l} value={l}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <ErrorMessage field="ledger" />
-      </div>
-
-      <div className="md:col-span-1">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.fineness")}{" "}
-        </label>
-        <select
-          className={inputStyle}
-          value={fineness} // 👈 (State คือ "333")
-          onChange={(e) => setFineness(e.target.value)} // 👈 (Save "333")
-          disabled={!ledger}
-        >
-          <option value="">
-            {" "}
-            {ledger
-              ? t("form.fineness_options.select_one")
-              : t("form.fineness_options.select_ledger_first")}{" "}
-          </option>
-          {finenessOptions.map((option) => (
-            <option key={option.label} value={option.value}>
-              {" "}
-              {/* 👈 value={333} */}
-              {option.label} {/* 👈 ผู้ใช้เห็น '8K' */}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* --- แถวที่ 3 --- */}
-      {/* ✅ (แก้ไข) 17. เปลี่ยน Counterpart เป็น Dropdown */}
-      <div className="md:col-span-1">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.counterpart")}{" "}
-        </label>
-        <select
-          className={inputStyle}
-          value={counterpart}
-          onChange={(e) => setCounterpart(e.target.value)}
-        >
-          <option value="">Select...</option>
-          {COUNTERPART_LIST.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* ✅ (แก้ไข) 18. เปลี่ยน Shipping Agent เป็น Dropdown */}
-      <div className="md:col-span-1">
-        <label className="block text-sm font-medium">
-          {" "}
-          {t("form.shipping_agent")}{" "}
-        </label>
-        <select
-          className={inputStyle}
-          value={shippingAgent}
-          onChange={(e) => setShippingAgent(e.target.value)}
-        >
-          <option value="">Select...</option>
-          {SHIPPING_AGENT_LIST.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* ✅ (แก้ไข) 19. Calculated Loss (Percent) */}
+      {/* Calculated Loss (Percent) */}
       <div className="md:col-span-1">
         <label className="block text-sm font-medium">
           {" "}
@@ -648,21 +638,27 @@ export default function GoldForm({
         <ErrorMessage field="calculated_loss" />
       </div>
 
-      {/* --- แถวที่ 4 --- */}
-      {/* Good Details (ขยาย) */}
+      {/* Shipping Agent */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">
-          {t("form.good_details")}
+          {" "}
+          {t("form.shipping_agent")}{" "}
         </label>
-        <textarea
-          rows={1}
+        <select
           className={inputStyle}
-          value={goodDetails}
-          onChange={(e) => setGoodDetails(e.target.value)}
-        />
+          value={shippingAgent}
+          onChange={(e) => setShippingAgent(e.target.value)}
+        >
+          <option value="">Select...</option>
+          {SHIPPING_AGENT_LIST.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Remarks (ขยาย) */}
+      {/* Remarks */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium">{t("form.remarks")}</label>
         <textarea
@@ -673,12 +669,11 @@ export default function GoldForm({
         />
       </div>
 
-
       {/* Buttons */}
-      <div className="md:col-span-4 flex justify-end gap-2 self-end">
+      <div className="md:col-span-12 flex justify-end gap-2 self-end">
         <button
           type="button"
-          className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200 "
+          className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200"
           onClick={handleReset}
         >
           {t("form.reset")}

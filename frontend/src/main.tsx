@@ -38,7 +38,7 @@ createRoot(document.getElementById("root")!).render(
             {/* <Route path="/materials/golds/new" element={<GoldCreatePage />} /> */}
             {/* <Route path="/materials/golds/edit/:id" element={<GoldEditPage />} /> */}
 
-            <Route path="/materials/golds/edit/:id" element={<GoldListPage />} />
+            {/* <Route path="/materials/golds/edit/:id" element={<GoldListPage />} /> */}
             
             {/* ✅ route อื่นที่ไม่รู้จัก → ส่งกลับ /golds */}
             <Route

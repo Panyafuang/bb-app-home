@@ -84,7 +84,7 @@
   },
   "form": {
     "saving": "Saving...",
-    "calculated_loss": "Calculated Loss (%)",
+    "calculated_loss": "Calc. Loss (%)",
     "save": "Save",
     "reset": "Reset",
     "date": "Date",
@@ -109,7 +109,7 @@
       "select_ledger_first": "Select ledger first"
     },
     "calculated_loss_grams": "Calculated Loss (g)",
-    "calculated_loss_percent": "Calculated Loss (%)",
+    "calculated_loss_percent": "Calc. Loss (%)",
     "calculated_loss_percent_placeholder": "e.g. 0.5",
     "counterpart": "Counterpart",
     "shipping_agent": "Shipping Agent",

@@ -8,6 +8,7 @@ import Modal from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useDeleteGold } from "@/features/golds/hooks/useDeleteGold"; // Custom Hook จาก React Query
 import { formatDate } from "@/utils/date";
+import { finenessToKarat } from "@/utils/help";
 
 
 export default function RecordsTable({
@@ -80,7 +81,7 @@ export default function RecordsTable({
             </th>
             <th className="border border-gray-200 px-4 py-3">{t("table.direction")}</th>
             <th className="border border-gray-200 px-4 py-3 text-center">{t("table.weight")}</th>
-            <th className="border border-gray-200 px-4 py-3 min-w-[220px]">
+            <th className="border border-gray-200 px-4 py-3 min-w-[180px]">
               {t("table.counterpart")}
             </th>
             <th className="border border-gray-200 px-4 py-3">{t("table.fineness")}</th>
@@ -152,8 +153,8 @@ export default function RecordsTable({
                   >
                     {r.gold_in_grams > 0 ? r.gold_in_grams : r.gold_out_grams}
                   </td>
-                  <td className="border border-gray-200 px-6 py-4 min-w-[220px]">{r.counterpart}</td>
-                  <td className="border border-gray-200 px-6 py-4">{r.fineness}</td>
+                  <td className="border border-gray-200 px-6 py-4 min-w-[180px]">{r.counterpart}</td>
+                  <td className="border border-gray-200 px-6 py-4">{finenessToKarat(r.fineness)}</td>
                   <td className="border border-gray-200 px-6 py-4">{r.status}</td>
                   <td className="border border-gray-200 px-6 py-4 min-w-[200px]">{r.good_details}</td>
                   <td className="border border-gray-200 px-6 py-4">{r.shipping_agent}</td>

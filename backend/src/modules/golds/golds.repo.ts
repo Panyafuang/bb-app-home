@@ -3,23 +3,26 @@ import debugFactory from "debug";
 import { PoolClient } from "pg";
 
 import { pool } from "../../db/pool";
-import { CreateGoldDto, GoldRecord, Ledger, UpdateGoldDto } from "../../types/golds";
+import {
+  CreateGoldDto,
+  GoldRecord,
+  Ledger,
+  UpdateGoldDto,
+} from "../../types/golds";
 
 const log = debugFactory("app:repo:golds");
 const GOLD_RECORD = `gold_record`;
 
-
-
 export type RepoFindParams = {
   // พารามิเตอร์สำหรับค้นหาและกรอง
-  from?: Date | null;                       // กรอกตามวันที่เริ่มต้น
-  to?: Date | null;                         // กรอกตามวันที่สิ้นสุด
-  reference_number?: string | null;         // ค้นหาตามเลขอ้างอิง (แบบ fuzzy)
-  ledger?: Ledger;                          // กรองตามสมุดบัญชี
-  counterpart?: string | null;              // คู่ค้า/ลูกค้า Supplier or Customer
-  fineness?: number | null;                 // Gold Karat or Material (ความบริสุทธิ์ของทอง 24k)
-  shipping_agent?: string | null;           // เช่น Fedex, RK International ฯลฯ
-  status?: string | null;                   // เช่น "Purchased", "Invoiced", "Returned"
+  from?: Date | null; // กรอกตามวันที่เริ่มต้น
+  to?: Date | null; // กรอกตามวันที่สิ้นสุด
+  reference_number?: string | null; // ค้นหาตามเลขอ้างอิง (แบบ fuzzy)
+  ledger?: Ledger; // กรองตามสมุดบัญชี
+  counterpart?: string | null; // คู่ค้า/ลูกค้า Supplier or Customer
+  fineness?: number | null; // Gold Karat or Material (ความบริสุทธิ์ของทอง 24k)
+  shipping_agent?: string | null; // เช่น Fedex, RK International ฯลฯ
+  status?: string | null; // เช่น "Purchased", "Invoiced", "Returned"
 
   // กรองตามปริมาณทองคำ
   gold_out_min?: number | null; // ปริมาณทองออกขั้นต่ำ
@@ -33,14 +36,14 @@ export type RepoFindParams = {
   limit?: number; // จำนวนรายการต่อหน้า
   offset?: number; // ข้ามกี่รายการ
   sort?: "timestamp_tz:asc" | "timestamp_tz:desc"; // การเรียงลำดับตามเวลา
-}
+};
 
 /** สร้าง WHERE แบบ dynamic ตาม params ที่ส่งมา */
 function buildWhere(params: RepoFindParams) {
   // สร้างเงื่อนไข WHERE สำหรับ SQL query แบบไดนามิก
-  const where: string[] = [];   // เก็บเงื่อนไข WHERE
-  const values: any[] = [];     // เก็บค่าที่จะใช้ prepared statement
-  let i = 1;                    // ตัวนับสำหรับ parameter index
+  const where: string[] = []; // เก็บเงื่อนไข WHERE
+  const values: any[] = []; // เก็บค่าที่จะใช้ prepared statement
+  let i = 1; // ตัวนับสำหรับ parameter index
 
   // ตรวจสอบและสร้างเงื่อนไขสำหรับแต่ละพารามิเตอร์
   if (params.from) {
@@ -74,7 +77,6 @@ function buildWhere(params: RepoFindParams) {
     where.push(`status ILIKE '%' || $${i++} || '%'`);
     values.push(params.status);
   }
-
 
   /**
    * ค้นหาแบบ =
@@ -127,9 +129,9 @@ function buildWhere(params: RepoFindParams) {
   return { clause, values, nextIndex: i };
 }
 
-
-
-export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord[]; total: number }> {
+export async function queryGolds(
+  p: RepoFindParams
+): Promise<{ items: GoldRecord[]; total: number }> {
   log("queryGolds params=%o", p);
 
   // สร้าง WHERE clause และค่า parameters
@@ -168,10 +170,7 @@ export async function queryGolds(p: RepoFindParams): Promise<{ items: GoldRecord
 export async function findGoldsById(id: string): Promise<GoldRecord | null> {
   log("findGoldsById %s", id);
   const { rows } = await pool.query(
-    `SELECT id, timestamp_tz, reference_number,
-            gold_in_grams, gold_out_grams, net_gold_grams,
-            calculated_loss, remarks, category, ledger,
-            created_at, updated_at
+    `SELECT *
        FROM gold_record
       WHERE id = $1`,
     [id]
@@ -198,15 +197,27 @@ export async function insertGold(
     good_details,
     status,
     shipping_agent,
-    remarks = null
+    remarks = null,
   } = dto;
 
   const query = `
     INSERT INTO gold_record (
-      timestamp_tz, reference_number, ledger, gold_in_grams, gold_out_grams, remarks, calculated_loss, related_reference_number, counterpart, fineness, good_details, status, shipping_agent
+      timestamp_tz, 
+      reference_number, 
+      ledger, 
+      gold_in_grams, 
+      gold_out_grams, 
+      remarks, 
+      calculated_loss, 
+      related_reference_number, 
+      counterpart, 
+      fineness, 
+      good_details, 
+      status, 
+      shipping_agent
     )
     VALUES (
-      COALESCE($1::timestamptz, NOW()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      COALESCE($1::timestamptz, NOW()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
     )
     RETURNING *;
   `;
@@ -216,19 +227,19 @@ export async function insertGold(
   log(`SQL Query: %s${query}`);
 
   const { rows } = await c.query(query, [
-    timestamp_tz,     // $1
+    timestamp_tz, // $1
     reference_number, // $2
-    ledger,           // $3
-    gold_in_grams,    // $4
-    gold_out_grams,   // $5
-    remarks,          // $7
-    calculated_loss,  // $8 (เป็น "กรัม")
+    ledger, // $3
+    gold_in_grams, // $4
+    gold_out_grams, // $5
+    remarks, // $7
+    calculated_loss, // $8 (เป็น "กรัม")
     related_reference_number, // $9
-    counterpart,      // $10
-    fineness,         // $11
-    good_details,     // $12
-    status,           // $13
-    shipping_agent,   // $14
+    counterpart, // $10
+    fineness, // $11
+    good_details, // $12
+    status, // $13
+    shipping_agent, // $14
   ]);
 
   log("Inserted result id=%s", rows[0]?.id);
@@ -295,10 +306,7 @@ export async function updateGold(
   return result;
 }
 
-export async function deleteGold(
-  c: PoolClient,
-  id: string
-): Promise<boolean> {
+export async function deleteGold(c: PoolClient, id: string): Promise<boolean> {
   log(`deleteGold %s${id}`);
 
   const query = `DELETE FROM ${GOLD_RECORD} WHERE id = $1`;
@@ -322,7 +330,9 @@ export async function deleteGold(
  * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
  * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
  */
-export async function checkReferenceExists(reference: string): Promise<boolean> {
+export async function checkReferenceExists(
+  reference: string
+): Promise<boolean> {
   log("checkReferenceExists reference=%s", reference);
   const res = await pool.query(
     `SELECT 1 FROM gold_record WHERE reference_number = $1 LIMIT 1`,

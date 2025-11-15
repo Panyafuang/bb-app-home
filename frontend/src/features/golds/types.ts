@@ -29,7 +29,7 @@ export interface GoldRecord {
   details: string | null;
   gold_in_grams: number;
   gold_out_grams: number;
-  net_gold_grams: number;
+  net_gold_grams?: number;
   calculated_loss: number | null;
   ledger: Ledger | null;
   remarks: string | null;

@@ -40,7 +40,7 @@ export interface GoldRecord {
   related_reference_number: string | null; // หมายเลขอ้างอิงของเอกสาร/ธุรกรรมที่เกี่ยวข้อง
   gold_in_grams: number; // น้ำหนักทองที่รับเข้า (หน่วย: กรัม)
   gold_out_grams: number; // น้ำหนักทองที่จ่ายออก (หน่วย: กรัม)
-  net_gold_grams: number; // คำนวณอัตโนมัติ (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
+  net_gold_grams?: number; // คำนวณอัตโนมัติ (gold_in_grams - gold_out_grams) ปริมาณทองคงเหลือสุทธิในแต่ละรายการ
   calculated_loss: number | null; // น้ำหนักทองที่สูญเสียระหว่างการผลิต
   ledger: Ledger; // (ใช้ Enum ใหม่)
   counterpart: string | null; // คู่ค้า/ลูกค้า/คู่ธุรกรรม
