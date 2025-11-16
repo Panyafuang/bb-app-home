@@ -20,15 +20,15 @@ const STATUS_LIST_IN = ["purchased", "received"];
 const STATUS_LIST_OUT = ["invoiced", "returned"];
 
 const SHIPPING_AGENT = [
-  "FedEx",
-  "DHL",
-  "RK International",
-  "Ferrari",
-  "Brinks",
-  "Kerry Express",
-  "Flash Express",
-  "Thailand Post",
-  "Others",
+  "fedex",
+  "dhl",
+  "rk international",
+  "ferrari",
+  "brinks",
+  "kerry express",
+  "flash express",
+  "thailand post",
+  "others",
 ] as const;
 
 const getGoldsValidation = [
@@ -158,10 +158,10 @@ const createGoldValidation = [
       ) {
         if (!FINENESS_GOLD_NUMERIC.includes(value))
           throw new Error(`Invalid fineness ${value} for Gold ledger.`);
-      } else if (ledger === "Palladium") {
+      } else if (ledger === "palladium") {
         if (!FINENESS_PALLADIUM_NUMERIC.includes(value))
           throw new Error(`Invalid fineness ${value} for Palladium ledger.`);
-      } else if (ledger === "Platinum") {
+      } else if (ledger === "platinum") {
         if (!FINENESS_PLATINUM_NUMERIC.includes(value))
           throw new Error(`Invalid fineness ${value} for Platinum ledger.`);
       }
@@ -237,11 +237,11 @@ const updateGoldValidation = [
         if (!FINENESS_GOLD_NUMERIC.includes(Number(value))) {
           throw new Error(`Invalid fineness ${value} for Gold ledger.`);
         }
-      } else if (ledger === "Palladium") {
+      } else if (ledger === "palladium") {
         if (!FINENESS_PALLADIUM_NUMERIC.includes(Number(value))) {
           throw new Error(`Invalid fineness ${value} for Palladium ledger.`);
         }
-      } else if (ledger === "Platinum") {
+      } else if (ledger === "platinum") {
         if (!FINENESS_PLATINUM_NUMERIC.includes(Number(value))) {
           throw new Error(`Invalid fineness ${value} for Platinum ledger.`);
         }

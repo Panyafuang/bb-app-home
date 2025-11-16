@@ -15,13 +15,16 @@ export const LEDGERS = [
   "PV Fine Gold",
 ] as const;
 
-// (Dropdowns)
 export const COUNTERPART_LIST = [
-  "Reuters",
-  "Supplier A",
-  "Customer B",
-  "ร้านค้าทอง A",
-  // (เพิ่มรายการที่นี่ให้ตรงกับ backend/src/types/golds.ts)
+  "Nakagawa",
+  "Qnet",
+  "Paspaley",
+  "Poh Heng",
+  "Germany",
+  "BB stock",
+  "Aspial",
+  "Umicore",
+  "Others",
 ] as const;
 
 export const SHIPPING_AGENT_LIST = [
@@ -32,7 +35,7 @@ export const SHIPPING_AGENT_LIST = [
   "Brinks",
   "Kerry Express",
   "Flash Express",
-  "Thialand Post",
+  "Thailand Post",
   "Others",
 ] as const;
 
@@ -66,9 +69,6 @@ export type Ledger = (typeof LEDGERS)[number];
 export type Counterpart = (typeof COUNTERPART_LIST)[number];
 export type ShippingAgent = (typeof SHIPPING_AGENT_LIST)[number];
 
-// ❌ (ลบ) Category
-// export type Category = ...
-
 // (Meta สำหรับ Pagination - เหมือนเดิม)
 export interface Meta {
   page?: number;
@@ -82,14 +82,12 @@ export interface GoldRecord {
   timestamp_tz: string; // (รับเป็น string)
   reference_number: string;
   related_reference_number: string | null;
-  // ❌ (ลบ) details: string | null;
   gold_in_grams: number;
   gold_out_grams: number;
   net_gold_grams: number; // (Backend คำนวณให้)
   calculated_loss: number | null; // (Decimal 0-1)
   ledger: Ledger; // (Required)
   remarks: string | null;
-  // ❌ (ลบ) category: Category | null;
   created_at: string;
   updated_at: string;
 
@@ -117,8 +115,6 @@ export interface CreateGoldDTO {
   status?: string | null;
   shipping_agent?: ShippingAgent | null;
   remarks?: string | null;
-
-  // ❌ (ลบ) details, category
 }
 
 export interface UpdateGoldDTO extends Partial<CreateGoldDTO> {}

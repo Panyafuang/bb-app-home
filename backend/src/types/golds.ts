@@ -1,6 +1,6 @@
 export type Ledger =
-  | "Beauty Bijoux"
-  | "Green Gold"
+  | "beauty bijoux"
+  | "Green gold"
   | "Palladium"
   | "Platinum"
   | "PV Accessories"

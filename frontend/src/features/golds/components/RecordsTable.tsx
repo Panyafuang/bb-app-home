@@ -6,8 +6,8 @@ import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useDeleteGold } from "@/features/golds/hooks/useDeleteGold"; // Custom Hook จาก React Query
-import { formatDate } from "@/utils/date";
-import { finenessToKarat } from "@/utils/help";
+import { formatDate } from "@/utils/utils";
+import { finenessToKarat } from "@/utils/utils";
 // import { useNavigate } from "react-router-dom";
 
 export default function RecordsTable({

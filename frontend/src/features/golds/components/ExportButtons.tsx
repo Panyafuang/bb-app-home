@@ -7,7 +7,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import type { GoldRecord } from "../types";
-import { finenessToKarat } from "@/utils/help";
+import { finenessToKarat } from "@/utils/utils";
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = '';

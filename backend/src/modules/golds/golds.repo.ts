@@ -277,6 +277,16 @@ export async function updateGold(
     pushFnHelper("calculated_loss", dto.calculated_loss);
   if (dto.remarks !== undefined) pushFnHelper("remarks", dto.remarks);
   if (dto.ledger !== undefined) pushFnHelper("ledger", dto.ledger);
+  if (dto.fineness !== undefined) pushFnHelper("fineness", dto.fineness);
+  if (dto.related_reference_number !== undefined)
+    pushFnHelper("related_reference_number", dto.related_reference_number);
+  if (dto.counterpart !== undefined)
+    pushFnHelper("counterpart", dto.counterpart);
+  if (dto.good_details !== undefined)
+    pushFnHelper("good_details", dto.good_details);
+  if (dto.status !== undefined) pushFnHelper("status", dto.status);
+  if (dto.shipping_agent !== undefined)
+    pushFnHelper("shipping_agent", dto.shipping_agent);
 
   if (fields.length === 0) {
     // ไม่ส่งฟิลด์มาอัปเดต
@@ -330,7 +340,9 @@ export async function deleteGold(c: PoolClient, id: string): Promise<boolean> {
  * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
  * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
  */
-export async function checkReferenceExists(reference: string): Promise<boolean> {
+export async function checkReferenceExists(
+  reference: string
+): Promise<boolean> {
   log("checkReferenceExists reference=%s", reference);
 
   if (!reference || reference.trim() === "") return false;

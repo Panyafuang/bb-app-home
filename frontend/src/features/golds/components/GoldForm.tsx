@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { checkRefUnique as apiCheckRefUnique } from "@/api/goldsClient";
-import { getTodayISO } from "@/utils/help";
+import { getTodayISO } from "@/utils/utils";
 
 const LEDGERS = [
   "Beauty Bijoux",
@@ -15,8 +15,8 @@ const LEDGERS = [
 ] as const;
 
 // (Constants สำหรับ Status/Fineness)
-const STATUS_OPTIONS_IN = ["Purchased", "Received"] as const;
-const STATUS_OPTIONS_OUT = ["Invoiced", "Returned"] as const;
+const STATUS_OPTIONS_IN = ["purchased", "received"] as const;
+const STATUS_OPTIONS_OUT = ["invoiced", "returned"] as const;
 
 // (กลุ่ม Gold)
 export const FINENESS_MAP_GOLD = [
@@ -340,10 +340,10 @@ export default function GoldForm({
     ) {
       return FINENESS_MAP_GOLD;
     }
-    if (ledger === "Palladium") {
+    if (ledger === "palladium") {
       return FINENESS_MAP_PALLADIUM;
     }
-    if (ledger === "Platinum") {
+    if (ledger === "platinum") {
       return FINENESS_MAP_PLATINUM;
     }
     return [];
