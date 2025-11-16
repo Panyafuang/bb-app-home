@@ -308,10 +308,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const [openMaterials, setOpenMaterials] = useState<boolean>(defaultOpen);
 
   return (
-    <div className="flex h-full flex-col">
-      {/* <div className="flex-1 overflow-y-auto px-2">
-        <nav className="mt-1 space-y-1"> */}
-
+    <div className="flex h-full flex-col border-r border-gray-200">
       <div className="relative flex h-full w-full flex-col bg-white/80 backdrop-blur">
         <nav className="px-3 py-3 text-sm">
           {items.map((it, idx) => {
@@ -385,7 +382,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
         </nav>
       </div>
 
-      <div className="border-t border-gray-100 p-2">
+      <div className="border-t border-gray-200 p-2">
         <button
           onClick={onToggleCollapse}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50"

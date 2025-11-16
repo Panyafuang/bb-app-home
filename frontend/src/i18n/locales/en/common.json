@@ -123,7 +123,9 @@
       "returned": "Returned"
     },
     "good_details": "Good Details",
-    "net_weight": "Net Weight (g)"
+    "net_weight": "Net Weight (g)",
+    "reference_number_checking": "Checking reference number...",
+    "reference_number_exists": "reference number already exists"
   },
   "search": {
     "from": "From Date",

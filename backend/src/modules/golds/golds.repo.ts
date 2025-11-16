@@ -232,14 +232,14 @@ export async function insertGold(
     ledger, // $3
     gold_in_grams, // $4
     gold_out_grams, // $5
-    remarks, // $7
-    calculated_loss, // $8 (เป็น "กรัม")
-    related_reference_number, // $9
-    counterpart, // $10
-    fineness, // $11
-    good_details, // $12
-    status, // $13
-    shipping_agent, // $14
+    remarks, // $6
+    calculated_loss, // $7 (เป็น "กรัม")
+    related_reference_number, // $8
+    counterpart, // $9
+    fineness, // $10
+    good_details, // $11
+    status, // $12
+    shipping_agent, // $13
   ]);
 
   log("Inserted result id=%s", rows[0]?.id);
@@ -330,13 +330,15 @@ export async function deleteGold(c: PoolClient, id: string): Promise<boolean> {
  * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
  * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
  */
-export async function checkReferenceExists(
-  reference: string
-): Promise<boolean> {
+export async function checkReferenceExists(reference: string): Promise<boolean> {
   log("checkReferenceExists reference=%s", reference);
+
+  if (!reference || reference.trim() === "") return false;
+  const normalized = reference.trim();
+
   const res = await pool.query(
-    `SELECT 1 FROM gold_record WHERE reference_number = $1 LIMIT 1`,
-    [reference]
+    `SELECT 1 FROM gold_record WHERE LOWER(reference_number) = LOWER($1) LIMIT 1`,
+    [normalized]
   );
   // rowCount can be null in some typings/environments; coalesce to 0 before comparison
   return (res.rowCount ?? 0) > 0;

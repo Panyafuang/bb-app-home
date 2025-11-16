@@ -128,7 +128,9 @@
       "returned": "Returned (ตีกลับ)"
     },
     "good_details": "รายละเอียดสินค้า",
-    "net_weight": "น้ำหนักทอง (กรัม)"
+    "net_weight": "น้ำหนักทอง (กรัม)",
+    "reference_number_checking": "กำลังตรวจสอบหมายเลขอ้างอิง...",
+    "reference_number_exists": "เลขอ้างอิงนี้ถูกใช้ไปแล้ว"
   },
   "search": {
     "from": "จากวันที่",

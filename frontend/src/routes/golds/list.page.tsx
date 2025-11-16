@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import SearchBar from "@/features/golds/components/SearchBar";
 import { useCreateGold } from "@/features/golds/hooks/useCreateGold";
 import GoldForm from "@/features/golds/components/GoldForm";
+import ExportButtons from "@/features/golds/components/ExportButtons";
 
 /**
  * หน้ารายการ: มี SearchBar + Table + Pagination
@@ -66,24 +67,8 @@ export default function GoldListPage() {
             {/* </span> */}
           </h5>
 
-          {/* Buttons */}
-          <div className="md:col-span-2 flex justify-end gap-2 self-end">
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-lg px-4 py-2 hover:bg-gray-50 text-sm border border-gray-200"
-            >
-              <FaFilePdf />
-              {t("button.exports.pdf")}
-            </button>
-
-            <button
-              type="submit"
-              className="flex items-center gap-2 rounded-lg px-4 py-2 hover:bg-gray-50 text-sm border border-gray-200"
-            >
-              <FaFileCsv />
-              {t("button.exports.csv")}
-            </button>
-          </div>
+          {/* Exports */}
+          <ExportButtons data={rows} filename="gold_records"/>
         </div>
 
         <SearchBar onChange={setFilters} onSubmit={refetch} />
