@@ -125,7 +125,14 @@
     "good_details": "Good Details",
     "net_weight": "Net Weight (g)",
     "reference_number_checking": "Checking reference number...",
-    "reference_number_exists": "reference number already exists"
+    "reference_number_exists": "reference number already exists",
+    "title": {
+      "new": "Create New Record",
+      "edit": "Edit Record"
+    },
+    "reference_number_readonly": "Reference number (read-only)",
+    "cancel_edit": "Cancel Edit",
+    "update": "Update"
   },
   "search": {
     "from": "From Date",

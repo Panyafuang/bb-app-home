@@ -74,6 +74,7 @@ export async function createGold(
 
 /**
  * PUT /api/v1/gold_records/:id
+ * Allow reference_number duplication (just return meta.warning)
  */
 export async function updateGold(
   req: Request,
@@ -85,6 +86,11 @@ export async function updateGold(
     const { id } = req.params;
     const dto = req.body;
 
+    // --- 1) ดึงข้อมูลเดิมของ record ---
+    const existing = await goldsService.getGoldById(id);
+    if (!existing) throw AppError.notFound("gold_record not found");
+
+    // --- 4) ทำการ update ---
     const goldUpdated = await goldsService.updateGold(id, dto);
     if (!goldUpdated) {
       throw AppError.notFound("gold_record not found");

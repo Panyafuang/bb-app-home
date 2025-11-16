@@ -130,7 +130,14 @@
     "good_details": "รายละเอียดสินค้า",
     "net_weight": "น้ำหนักทอง (กรัม)",
     "reference_number_checking": "กำลังตรวจสอบหมายเลขอ้างอิง...",
-    "reference_number_exists": "เลขอ้างอิงนี้ถูกใช้ไปแล้ว"
+    "reference_number_exists": "เลขอ้างอิงนี้ถูกใช้ไปแล้ว",
+    "title": {
+      "new": "สร้างรายการใหม่",
+      "edit": "แก้ไขรายการ"
+    },
+    "reference_number_readonly": "เลขอ้างอิง (ไม่สามารถแก้ไขได้)",
+    "cancel_edit": "ยกเลิกแก้ไข",
+    "update": "อัพเดท"
   },
   "search": {
     "from": "จากวันที่",

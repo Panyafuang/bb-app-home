@@ -1,20 +1,16 @@
-import { FaFilePdf } from "react-icons/fa6";
-import { FaFileCsv } from "react-icons/fa";
-
 import { useGoldsQuery } from "@/features/golds/hooks/useGoldsQuery";
 import RecordsTable from "@/features/golds/components/RecordsTable";
 import Pagination from "@/components/ui/Pagination";
 import Breadcrumbs from "@/components/Breadcrumbs";
-// import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SearchBar from "@/features/golds/components/SearchBar";
 import { useCreateGold } from "@/features/golds/hooks/useCreateGold";
 import GoldForm from "@/features/golds/components/GoldForm";
 import ExportButtons from "@/features/golds/components/ExportButtons";
+import { useState } from "react";
+import { updateGold } from "@/api/goldsClient";
 
-/**
- * หน้ารายการ: มี SearchBar + Table + Pagination
- */
+
 export default function GoldListPage() {
   const { t } = useTranslation("common");
   const m = useCreateGold();
@@ -28,6 +24,8 @@ export default function GoldListPage() {
   const limit = data?.limit ?? filters.limit ?? 10;
   const total = data?.total ?? 0;
 
+  const [editingRow, setEditingRow] = useState<any | null>(null);
+
   return (
     <div className="space-y-4">
       <Breadcrumbs />
@@ -40,35 +38,50 @@ export default function GoldListPage() {
       </div>
 
       <GoldForm
-        mode="create"
-        // onSubmit={async (dto) => {
-        //   await m.mutateAsync(dto);
-        // }}
-
+        mode={editingRow ? "edit" : "create"} // ถ้ามี editingRow → edit mode
+        defaultValues={editingRow ?? undefined} // ส่งค่าเข้า GoldForm
+        onCancel={() => {
+          // onCancel: ถูกเรียกเมื่อผู้ใช้กด "Cancel Edit" ใน GoldForm
+          setEditingRow(null);
+        }}
         onSubmit={async (dto) => {
-          // 1. สั่งสร้างข้อมูล (เหมือนเดิม)
-          await m.mutateAsync(dto);
+          if (editingRow) {
+            // ----- UPDATE -----
+            await updateGold(editingRow.id, dto); // ต้อง import API updateGold
+            setEditingRow(null); // กลับเป็น create mode
+            refetch();
 
-          // 2. (เพิ่ม) สั่งให้ตารางโหลดข้อมูลใหม่!
-          refetch();
+            // try {
+            //   // call backend update API
+            //   await updateGold(editingRow.id, dto);
+            //   // clear editing state -> กลับเป็น create mode
+            //   setEditingRow(null);
+            //   // reload data
+            //   await refetch();
+            // } catch (err) {
+            //   // คุณอาจต้องการแสดง toast / notification ที่นี่
+            //   console.error("Update failed", err);
+            //   throw err; // ให้ GoldForm เห็น error (ถ้าต้องการ)
+            // }
+          } else {
+            // ----- CREATE -----
+            await m.mutateAsync(dto);
+            refetch();
+          }
         }}
       />
 
-      {/* <hr className="h-px my-8 bg-gray-300 border-0"></hr> */}
       <hr className="w-48 h-1 mx-auto my-4 bg-gray-300 border-0 rounded-sm md:my-10"></hr>
       <div className="border border-gray-200 rounded-2xl p-4 mt-7">
         <div className="flex justify-between px-4">
           <h5
-            className="mb-4 text-lg font-semibold text-gray-700 md:text-2xl lg:text-3xl"
+            className="mb-4 text-2xl font-semibold text-gray-700 md:text-xl lg:text-3xl"
             style={{ marginBottom: "0" }}
           >
             {t("header.transactions")}
-            {/* <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-indigo-600"> */}
-            {/* </span> */}
           </h5>
-
           {/* Exports */}
-          <ExportButtons data={rows} filename="gold_records"/>
+          <ExportButtons data={rows} filename="gold_records" />
         </div>
 
         <SearchBar onChange={setFilters} onSubmit={refetch} />
@@ -78,6 +91,7 @@ export default function GoldListPage() {
           rows={rows}
           loading={isLoading}
           onDeleted={refetch}
+          onEdit={(row) => setEditingRow(row)} // <<< ส่งค่าเข้า state
           page={page}
           limit={limit}
         />
