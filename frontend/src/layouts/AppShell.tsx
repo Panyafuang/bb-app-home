@@ -39,21 +39,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50">
       <Navbar onToggleSidebar={() => setSidebarOpenMobile((v) => !v)} />
       <div className="relative">
-        {/* <aside
-          className="fixed left-0 z-30 hidden md:block border-r border-gray-100 bg-white/80 backdrop-blur"
-          style={{
-            top: NAV_H,
-            height: `calc(100vh - ${NAV_H}px)`,
-            width: collapsed ? W_COLLAPSED : W_EXPANDED,
-          }}
-        >
-          <Sidebar
-            open={sidebarOpenMobile}
-            onClose={() => setSidebarOpenMobile(false)}
-            collapsed={collapsed}
-            onToggleCollapse={() => setCollapsed((v) => !v)}
-          />
-        </aside> */}
         {/* ----------------- SIDEBAR ----------------- */}
         <aside
           className="fixed left-0 z-30 hidden md:block border-r border-gray-100 bg-white/80 backdrop-blur"

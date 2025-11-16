@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useDeleteGold } from "@/features/golds/hooks/useDeleteGold"; // Custom Hook จาก React Query
 import { formatDate } from "@/utils/date";
 import { finenessToKarat } from "@/utils/help";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 export default function RecordsTable({
   rows,
@@ -31,7 +31,7 @@ export default function RecordsTable({
   // เก็บ ID ของรายการที่ผู้ใช้เลือกกดปุ่มลบ
   const [targetId, setTargetId] = useState<string | null>(null);
   const { t, i18n } = useTranslation("common");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   /** ฟังก์ชันการลบ (Business Logic) */
   const doDelete = async () => {
@@ -208,7 +208,7 @@ export default function RecordsTable({
                         title={t("table.edit") || "Edit"}
                         onClick={() => {
                           onEdit?.(r); // ส่งข้อมูล row กลับไปที่ GoldListPage
-                          navigate(`/materials/golds/edit/${r.id}`);
+                          // navigate(`/materials/golds/edit/${r.id}`);
                           window.scrollTo(0, 0);
                         }}
                         className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 mr-2"

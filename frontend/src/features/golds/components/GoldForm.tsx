@@ -109,18 +109,22 @@ async function checkReferenceUniqueRemote(reference: string): Promise<boolean> {
 
 /**
  * GoldForm
- * - ปรับให้รับ prop onCancel?: () => void เพื่อสั่งกลับไปที่โหมด create (parent ควบคุม)
- * - ถ้า parent ไม่ส่ง onCancel จะ fallback ไปทำ handleReset() แทน (เคลียร์ form)
  *
- * Usage:
- * <GoldForm mode="create" ... />
- * <GoldForm mode="edit" defaultValues={row} onCancel={() => setMode('create')} ... />
+ * Props:
+ * - mode: 'create' | 'edit'
+ * - defaultValues: ค่าเดิมเมื่อแก้ไข (object ของ row)
+ * - onSubmit: ฟังก์ชันเรียกเมื่อกด submit (create / update)
+ * - onCancel?: Optional callback ให้ parent เปลี่ยนโหมดกลับเป็น create (ใช้กับ Cancel Edit)
+ *
+ * Important:
+ * - component จะ sync defaultValues -> local state โดยใช้ useEffect
+ * - เรียก handleReset() จะอ่านค่าจาก defaultValuesRef.current (ป้องกัน closure/read stale prop)
  */
 export default function GoldForm({
   mode,
   defaultValues,
   onSubmit,
-  onCancel, // <-- optional callback ให้ parent เปลี่ยนโหมดกลับเป็น 'create'
+  onCancel,
 }: {
   mode: "create" | "edit";
   defaultValues?: any;
@@ -130,9 +134,8 @@ export default function GoldForm({
   const { t } = useTranslation("common");
 
   // ============================
-  // State ของฟอร์ม (ค่าคอนโทรล)
-  // ค่าเริ่มต้นมาจาก defaultValues แต่สำคัญ: เมื่อ defaultValues เปลี่ยน (เช่นจาก parent)
-  // เราจะต้องมี useEffect มาซิงก์ค่า (ดู useEffect ด้านล่าง)
+  // Local state ของฟอร์ม (controlled inputs)
+  // ค่าเริ่มต้นมาจาก defaultValues แต่จะ sync อีกทีใน useEffect ข้างล่าง
   // ============================
   const [date, setDate] = useState<string>(
     defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO()
@@ -187,7 +190,7 @@ export default function GoldForm({
   // (State สำหรับ Validation)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
-  // refUnique: true = unique OK; false = duplicate (bad); null = not checked / unknown
+  // refUnique: true = unique OK; false = duplicate (warning); null = not checked / unknown
   const [refUnique, setRefUnique] = useState<boolean | null>(
     mode === "edit" ? true : null
   );
@@ -197,20 +200,30 @@ export default function GoldForm({
     setIsInitialLoad(false);
   }, []);
 
-  // keep latest reference to cancel race conditions
+  // keep latest reference to cancel race conditions (debounce results)
   const latestRef = useRef<string>(reference);
 
+  // ---------------------------
+  // defaultValuesRef - เก็บค่า defaultValues ล่าสุดใน ref
+  // เหตุผล: handleReset และ logic อื่นๆ อ่านจาก ref แทน prop โดยตรง
+  // เพื่อป้องกันปัญหา stale closure / re-render timing
+  // ---------------------------
+  const defaultValuesRef = useRef<any | null>(defaultValues ?? null);
+  useEffect(() => {
+    defaultValuesRef.current = defaultValues ?? null;
+  }, [defaultValues]);
+
   // ============================
-  // IMPORTANT: sync defaultValues -> local state when parent provides new defaultValues
-  // - ทำงานเมื่อ defaultValues หรือ mode เปลี่ยน (เช่น กด Edit แล้ว parent ส่ง row มาเป็น defaultValues)
-  // - ถ้า mode === "edit" จะ prefill ทุก field จาก defaultValues
-  // - ถ้า mode === "create" จะเรียก handleReset() เพื่อเคลียร์ฟอร์ม
-  // - ใช้ defaultValues?.id และ timestamp เพื่อป้องกันการ rerender เกินจำเป็น
+  // Sync defaultValues -> local state เมื่อ parent ส่งมา (เช่น กด Edit)
+  // - ใช้ defaultValues?.id และ timestamp เป็น dependency เพื่อไม่ trigger บ่อยเกินไป
+  // - Behavior:
+  //   * mode === 'edit' => prefill fields จาก defaultValues
+  //   * mode === 'create' => reset ฟอร์มเป็นค่าเริ่มต้น (empty/today)
   // ============================
   useEffect(() => {
-    // ถ้าไม่มีค่า defaultValues
     if (!defaultValues) {
       if (mode === "create") {
+        // ถ้าไม่มี defaultValues และเป็น create -> reset ให้เป็นค่าเริ่มต้น
         handleReset();
       }
       return;
@@ -224,12 +237,10 @@ export default function GoldForm({
           : getTodayISO()
       );
 
-      // --- Reference ---
+      // --- Reference (read-only ใน edit) ---
       setReference(defaultValues.reference_number ?? "");
 
       // --- Direction (IN/OUT) ---
-      // ถ้ามี gold_out_grams > 0 => OUT, ถ้ามี gold_in_grams > 0 => IN
-      // ถ้าไม่มีทั้งสองแต่มี net_gold_grams ให้ดู sign (negative = OUT)
       if (
         defaultValues.gold_out_grams != null &&
         Number(defaultValues.gold_out_grams) > 0
@@ -248,8 +259,6 @@ export default function GoldForm({
       }
 
       // --- Weight (Net Weight visible to user) ---
-      // Prioritize explicit gold_in_grams / gold_out_grams (existing logic),
-      // but also fall back to net_gold_grams if provided by backend.
       if (
         defaultValues.gold_in_grams != null &&
         Number(defaultValues.gold_in_grams) > 0
@@ -261,8 +270,6 @@ export default function GoldForm({
       ) {
         setWeightGrams(String(defaultValues.gold_out_grams));
       } else if (defaultValues.net_gold_grams != null) {
-        // if backend sends net_gold_grams (positive for IN, negative for OUT),
-        // show absolute value in weight field so UX matches existing behavior.
         setWeightGrams(String(Math.abs(Number(defaultValues.net_gold_grams))));
       } else {
         setWeightGrams("");
@@ -288,21 +295,15 @@ export default function GoldForm({
       setCalculatedLoss(lossVal);
 
       // --- Status: normalize to match select options ---
-      // สถานการณ์ปกติ backend อาจส่ง "purchased" หรือ "Purchased"
-      // UI options ใช้ "Purchased" / "Received" / "Invoiced" / "Returned"
-      // ดังนั้น normalize: lower -> capitalize first char
       const rawStatus = defaultValues.status ?? "";
       if (typeof rawStatus === "string" && rawStatus.trim() !== "") {
         const s = rawStatus.trim();
-        // ถ้า s เป็นทั้งหมดตัวพิมพ์เล็กหรือใหญ่ ให้แปลงเป็น Title Case แบบง่าย
         const normalized = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        // แต่ก่อนจะ set ให้ตรวจว่า normalized อยู่ใน option list (เพื่อป้องกันค่าที่ไม่รู้จัก)
         if (
           ["Purchased", "Received", "Invoiced", "Returned"].includes(normalized)
         ) {
           setStatus(normalized);
         } else {
-          // ถ้าไม่ match option ให้เก็บค่าเดิม (fallback)
           setStatus(s);
         }
       } else {
@@ -316,11 +317,11 @@ export default function GoldForm({
       // กลับไปโหมดสร้างใหม่ -> reset
       handleReset();
     }
-    // เฝ้าดู id/timestamp เพื่อป้องกันการ trigger บ่อยเกินไป ถ้า parent เปลี่ยน object reference แต่ข้อมูลไม่เปลี่ยน
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues?.id, defaultValues?.timestamp_tz, mode]);
 
   // ============================
-  // Derived state + helpers (เหมือนเดิม)
+  // Derived state + helpers
   // ============================
   const weightNumGrams = useMemo(() => {
     if (weightGrams === "") return NaN;
@@ -353,7 +354,7 @@ export default function GoldForm({
      - ในโหมด edit เราจะ disable ช่อง reference จึงไม่ต้องเช็ค
   ----------------------- */
   useEffect(() => {
-    // ถ้าเป็นโหมด edit และยังไม่เปลี่ยน (ช่อง disabled) ให้ข้ามการเช็คทั้งหมด
+    // ถ้าเป็นโหมด edit ให้ข้ามการเช็ค (ช่อง disabled)
     if (mode === "edit") {
       setCheckingRef(false);
       setRefUnique(true);
@@ -367,7 +368,7 @@ export default function GoldForm({
       return;
     }
 
-    // basic client validation
+    // basic client validation: ถ้า fail ให้ไม่เช็ค remote
     if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference) || reference.length > 100) {
       setRefUnique(null);
       setCheckingRef(false);
@@ -401,10 +402,10 @@ export default function GoldForm({
   }, [reference, mode]);
 
   useEffect(() => {
-    /* (Reset Status - เหมือนเดิม) */
+    /* (Reset Status - ถ้าจำเป็น) */
   }, [direction, isInitialLoad, mode]);
   useEffect(() => {
-    /* (Reset Fineness - เหมือนเดิม) */
+    /* (Reset Fineness - ถ้าจำเป็น) */
   }, [ledger, isInitialLoad, mode]);
 
   // Validation Logic (useMemo)
@@ -412,34 +413,37 @@ export default function GoldForm({
     const e: Record<string, string> = {};
     const today = getTodayISO();
 
-    // (Date, Reference, Direction, Weight, Ledger - เหมือนเดิม)
+    // Date
     if (date.trim() === "") e.date = t("validation.required");
     else if (!isValidIsoDate(date)) e.date = t("validation.date.invalidFormat");
     else if (date > today) e.date = t("validation.date.future");
     else if (date < COMPANY_FOUNDED)
       e.date = t("validation.date.tooOld", { date: "11/03/1991" });
 
+    // Reference (required even if edit; but in edit it's disabled)
     if (reference.trim() === "") e.reference = t("validation.required");
     else if (reference.length > 100)
       e.reference = t("validation.ref.maxLength");
     else if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference))
       e.reference = t("validation.ref.pattern");
 
+    // Direction
     if (direction === "") e.direction = t("validation.required");
 
+    // Weight
     if (weightGrams.trim() === "") e.weight = t("validation.required");
     else if (weightNumGrams <= 0) e.weight = t("validation.weight.positive");
     else if (weightNumGrams > 9999999.999)
       e.weight = t("validation.weight.max");
 
+    // Ledger
     if (ledger.trim() === "") e.ledger = t("validation.required");
 
-    // validation ของ Loss (กลับไปเป็นแบบ %)
+    // Calculated loss percent validation
     if (calculatedLoss.trim() !== "") {
       const dec = toDecimalFromPercentInput(calculatedLoss);
       if (dec === null) e.calculated_loss = t("validation.loss.invalidFormat");
       else if (dec < 0 || dec > 1)
-        // (0% - 100%)
         e.calculated_loss = t("validation.loss.range");
     }
 
@@ -458,30 +462,38 @@ export default function GoldForm({
   const canSubmit =
     Object.keys(errors).length === 0 && !checkingRef && refUnique !== false;
 
-  // --- 💅 CSS Classes (ลบ readOnlyStyle) ---
+  // --- 💅 CSS Classes ---
   const inputStyle =
     "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
   const errorStyle = "border-red-500 ring-2 ring-red-100 border-2";
 
-  // ฟังก์ชันรีเซ็ตฟอร์ม (เรียกได้ทั้งตอน create และหลัง submit สำเร็จ)
+  /**
+   * handleReset
+   * - สำคัญ: อ่านค่าจาก defaultValuesRef.current (ไม่อ่าน prop ตรงๆ)
+   * - Behavior:
+   *    * mode === 'edit' -> คืนค่าเป็นค่า original ของรายการ (defaultValues)
+   *    * mode === 'create' -> เคลียร์ฟอร์มเป็นค่าใหม่ (empty/today)
+   */
   function handleReset() {
+    // อ่านค่าล่าสุดจาก ref (ป้องกัน stale closure)
+    const dv = defaultValuesRef.current;
+
     setShowErrors(false);
-    setDate(defaultValues?.timestamp_tz?.slice(0, 10) || getTodayISO());
-    setReference(defaultValues?.reference_number || "");
-    // direction reset: same logic as useEffect
-    if (defaultValues) {
-      if (
-        defaultValues.gold_out_grams != null &&
-        Number(defaultValues.gold_out_grams) > 0
-      ) {
+
+    // date
+    setDate(dv?.timestamp_tz?.slice(0, 10) || getTodayISO());
+
+    // reference
+    setReference(dv?.reference_number || "");
+
+    // direction (same logic as sync useEffect)
+    if (dv) {
+      if (dv.gold_out_grams != null && Number(dv.gold_out_grams) > 0) {
         setDirection("OUT");
-      } else if (
-        defaultValues.gold_in_grams != null &&
-        Number(defaultValues.gold_in_grams) > 0
-      ) {
+      } else if (dv.gold_in_grams != null && Number(dv.gold_in_grams) > 0) {
         setDirection("IN");
-      } else if (defaultValues.net_gold_grams != null) {
-        setDirection(Number(defaultValues.net_gold_grams) < 0 ? "OUT" : "IN");
+      } else if (dv.net_gold_grams != null) {
+        setDirection(Number(dv.net_gold_grams) < 0 ? "OUT" : "IN");
       } else {
         setDirection("");
       }
@@ -490,41 +502,32 @@ export default function GoldForm({
     }
 
     // weight reset (รองรับ gold_in / gold_out / net_gold_grams)
-    if (
-      defaultValues?.gold_in_grams != null &&
-      Number(defaultValues.gold_in_grams) > 0
-    ) {
-      setWeightGrams(String(defaultValues.gold_in_grams));
-    } else if (
-      defaultValues?.gold_out_grams != null &&
-      Number(defaultValues.gold_out_grams) > 0
-    ) {
-      setWeightGrams(String(defaultValues.gold_out_grams));
-    } else if (defaultValues?.net_gold_grams != null) {
-      setWeightGrams(String(Math.abs(Number(defaultValues.net_gold_grams))));
+    if (dv?.gold_in_grams != null && Number(dv.gold_in_grams) > 0) {
+      setWeightGrams(String(dv.gold_in_grams));
+    } else if (dv?.gold_out_grams != null && Number(dv.gold_out_grams) > 0) {
+      setWeightGrams(String(dv.gold_out_grams));
+    } else if (dv?.net_gold_grams != null) {
+      setWeightGrams(String(Math.abs(Number(dv.net_gold_grams))));
     } else {
       setWeightGrams("");
     }
 
-    setLedger(defaultValues?.ledger || "");
-    setRemarks(defaultValues?.remarks || "");
+    setLedger(dv?.ledger || "");
+    setRemarks(dv?.remarks || "");
 
     const defaultLoss =
-      defaultValues?.calculated_loss === null ||
-      defaultValues?.calculated_loss === undefined
+      dv?.calculated_loss === null || dv?.calculated_loss === undefined
         ? ""
-        : (Number(defaultValues.calculated_loss) * 100).toFixed(2);
+        : (Number(dv.calculated_loss) * 100).toFixed(2);
     setCalculatedLoss(defaultLoss);
 
-    setRelatedReference(defaultValues?.related_reference_number || "");
-    setCounterpart(defaultValues?.counterpart || "");
-    setFineness(
-      defaultValues?.fineness != null ? String(defaultValues.fineness) : ""
-    );
-    setGoodDetails(defaultValues?.good_details || "");
+    setRelatedReference(dv?.related_reference_number || "");
+    setCounterpart(dv?.counterpart || "");
+    setFineness(dv?.fineness != null ? String(dv.fineness) : "");
+    setGoodDetails(dv?.good_details || "");
 
-    // reset status (normalize same as useEffect)
-    const rawStatus = defaultValues?.status ?? "";
+    // reset status (normalize same as sync logic)
+    const rawStatus = dv?.status ?? "";
     if (typeof rawStatus === "string" && rawStatus.trim() !== "") {
       const s = rawStatus.trim();
       const normalized = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -539,7 +542,7 @@ export default function GoldForm({
       setStatus("");
     }
 
-    setShippingAgent(defaultValues?.shipping_agent || "");
+    setShippingAgent(dv?.shipping_agent || "");
     setRefUnique(mode === "edit" ? true : null);
     setCheckingRef(false);
   }
@@ -553,6 +556,7 @@ export default function GoldForm({
 
     try {
       setIsSubmitting(true);
+
       const gold_in_grams = direction === "IN" ? Number(weightGrams) : 0;
       const gold_out_grams = direction === "OUT" ? Number(weightGrams) : 0;
       const now = new Date();
@@ -566,17 +570,17 @@ export default function GoldForm({
         now.getSeconds()
       );
 
-      // ✅ (แก้ไข) 14. แปลง % กลับเป็น Decimal
+      // แปลง % -> decimal
       const decimalLoss = toDecimalFromPercentInput(calculatedLoss);
 
-      // (อัปเดต DTO)
-      const dto = {
+      // DTO ที่จะส่งไป backend
+      const dto: any = {
         timestamp_tz: timestamp.toISOString(),
         reference_number: reference.trim(),
         ledger: ledger,
         gold_in_grams,
         gold_out_grams,
-        calculated_loss: decimalLoss, // 👈 (ส่ง Decimal % ไป Backend)
+        calculated_loss: decimalLoss,
         fineness: fineness || null,
         counterpart: counterpart || null,
         good_details: goodDetails || null,
@@ -586,16 +590,14 @@ export default function GoldForm({
         remarks: remarks || null,
       };
 
-      // ---------- สำคัญ ----------
-      // ถ้าเป็นโหมด edit เราต้องการป้องกันการเปลี่ยน reference_number
-      // ให้ลบฟิลด์ reference_number ออกจาก dto ก่อนส่ง (repo จะอัปเดตเฉพาะ field ที่ส่งมา)
+      // ถ้าเป็น edit: ป้องกันการแก้ reference เปลี่ยนใน DB (ตามข้อกำหนด)
       if (mode === "edit") {
         delete dto.reference_number;
       }
 
-      // เรียก onSubmit (api client ของคุณ)
       await onSubmit(dto);
 
+      // ถ้าเป็นการสร้างใหม่ ให้เคลียร์ฟอร์มหลังสร้างสำเร็จ
       if (mode === "create") {
         handleReset();
       }
@@ -606,13 +608,12 @@ export default function GoldForm({
     }
   }
 
-  // Cancel edit handler: ถ้ามี parent callback ให้เรียก ถ้าไม่มีก็ reset form เป็นค่า default (fallback)
+  // Cancel edit handler: ถ้า parent ส่ง onCancel ให้เรียกมัน เพื่อ parent จะเปลี่ยน editing state
+  // ถ้า parent ไม่ส่ง จะ fallback ไป reset (clear/คืนค่า)
   function handleCancelEdit() {
     if (typeof onCancel === "function") {
       onCancel();
     } else {
-      // fallback: รีเซ็ต form เป็นค่า defaultValues และ set mode local เป็น create ไม่ได้เพราะ mode มาจาก prop
-      // แต่ at least clear visible fields
       handleReset();
     }
   }
@@ -635,7 +636,7 @@ export default function GoldForm({
             : `${t("form.title.new")}`}
         </h5>
 
-        {/* --- ถ้า edit ให้โชว์ปุ่ม Cancel Edit ทางขวา --- */}
+        {/* ถ้าเป็น edit ให้โชว์ปุ่ม Cancel Edit */}
         {mode === "edit" && (
           <div className="flex items-center gap-2">
             <button
@@ -672,7 +673,7 @@ export default function GoldForm({
           <ErrorMessage field="date" />
         </div>
 
-        {/* (ledger */}
+        {/* ledger */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">
             {" "}
@@ -703,37 +704,29 @@ export default function GoldForm({
           </label>
           <select
             className={inputStyle}
-            value={fineness} // 👈 (State คือ "333")
-            onChange={(e) => setFineness(e.target.value)} // 👈 (Save "333")
+            value={fineness}
+            onChange={(e) => setFineness(e.target.value)}
             disabled={!ledger}
           >
             <option value="">
-              {" "}
               {ledger
                 ? t("form.fineness_options.select_one")
-                : t("form.fineness_options.select_ledger_first")}{" "}
+                : t("form.fineness_options.select_ledger_first")}
             </option>
             {finenessOptions.map((option) => (
               <option key={option.label} value={option.value}>
-                {" "}
-                {/* 👈 value={333} */}
-                {option.label} {/* 👈 ผู้ใช้เห็น '8K' */}
+                {option.label}
               </option>
             ))}
           </select>
         </div>
 
-        {/* reference number (แก้ไข: disable เมื่อ mode === 'edit') */}
+        {/* reference number (disabled เมื่อ edit) */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">
             {t("form.reference")} <span className="text-red-600"> *</span>
           </label>
 
-          {/* 
-          - disabled เมื่อแก้ไข (mode === 'edit') 
-          - ไม่ใช้ errorStyle เมื่อ duplicate (duplicate เป็น warning เท่านั้น)
-          - แต่ยังแสดง validation error (required/format) หากกด submit โดยไม่มีค่า
-        */}
           <input
             className={`${inputStyle} ${
               showErrors && errors.reference ? errorStyle : ""
@@ -746,10 +739,11 @@ export default function GoldForm({
             disabled={mode === "edit"}
           />
 
-          {/* ข้อความอธิบายเมื่ออยู่ในโหมดแก้ไข */}
+          {/* ข้อความเมื่อ edit */}
           {mode === "edit" && (
             <p className="mt-1 text-xs text-gray-500">
-              {t("form.reference_number_readonly")}
+              {t("form.reference_number_readonly") ||
+                "Reference number ไม่สามารถแก้ไขได้หลังการสร้าง"}
             </p>
           )}
 
@@ -789,7 +783,7 @@ export default function GoldForm({
           />
         </div>
 
-        {/* counterpart  */}
+        {/* counterpart */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">
             {" "}
@@ -809,19 +803,6 @@ export default function GoldForm({
           </select>
         </div>
 
-        {/* Good Details */}
-        <div className="md:col-span-4">
-          <label className="block text-sm font-medium">
-            {t("form.good_details")}
-          </label>
-          <textarea
-            rows={1}
-            className={inputStyle}
-            value={goodDetails}
-            onChange={(e) => setGoodDetails(e.target.value)}
-          />
-        </div>
-
         {/* direction (IN, OUT) */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">
@@ -838,8 +819,7 @@ export default function GoldForm({
                   : "hover:bg-gray-50"
               }`}
             >
-              {" "}
-              {t("form.in")}{" "}
+              {t("form.in")}
             </button>
             <button
               type="button"
@@ -850,15 +830,14 @@ export default function GoldForm({
                   : "hover:bg-gray-50"
               }`}
             >
-              {" "}
-              {t("form.out")}{" "}
+              {t("form.out")}
             </button>
           </div>
           <ErrorMessage field="direction" />
         </div>
 
         {/* Weight (Grams) */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium">
             {t("form.net_weight")}
             <span className="text-red-600"> *</span>
@@ -878,8 +857,7 @@ export default function GoldForm({
         {/* Status */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium">
-            {" "}
-            {t("form.status")}{" "}
+            {t("form.status")}
           </label>
           <select
             className={inputStyle}
@@ -888,10 +866,9 @@ export default function GoldForm({
             disabled={!direction}
           >
             <option value="">
-              {" "}
               {direction
                 ? t("form.status_options.select_one")
-                : t("form.status_options.select_direction_first")}{" "}
+                : t("form.status_options.select_direction_first")}
             </option>
             {direction === "IN" &&
               STATUS_OPTIONS_IN.map((opt) => (
@@ -909,7 +886,7 @@ export default function GoldForm({
         </div>
 
         {/* Calculated Loss (Percent) */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium">
             {" "}
             {t("form.calculated_loss_percent")}{" "}
@@ -929,7 +906,7 @@ export default function GoldForm({
         </div>
 
         {/* Shipping Agent */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-4">
           <label className="block text-sm font-medium">
             {" "}
             {t("form.shipping_agent")}{" "}
@@ -948,6 +925,19 @@ export default function GoldForm({
           </select>
         </div>
 
+        {/* Good Details */}
+        <div className="md:col-span-4">
+          <label className="block text-sm font-medium">
+            {t("form.good_details")}
+          </label>
+          <textarea
+            rows={4}
+            className={inputStyle}
+            value={goodDetails}
+            onChange={(e) => setGoodDetails(e.target.value)}
+          />
+        </div>
+
         {/* Remarks */}
         <div className="md:col-span-4">
           <label className="block text-sm font-medium">
@@ -963,6 +953,7 @@ export default function GoldForm({
 
         {/* Buttons */}
         <div className="md:col-span-12 flex justify-end gap-2 self-end">
+          {/* Reset: จะคืนค่าเป็น defaultValuesRef.current หรือ clear เมื่อ create */}
           <button
             type="button"
             className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200"
@@ -970,7 +961,8 @@ export default function GoldForm({
           >
             {t("form.reset")}
           </button>
-          {/* เมื่ออยู่ในโหมด edit เปลี่ยนปุ่มเป็น Update */}
+
+          {/* ปุ่ม submit: ถ้า mode edit จะแสดง 'Update' และถ้า create แสดง 'Save' */}
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
