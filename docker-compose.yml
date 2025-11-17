@@ -1,5 +1,4 @@
-version: '3.8'
-
+# docker-compose.yml — วางทับได้เลย
 services:
   postgres:
     image: postgres:15-alpine
@@ -79,7 +78,51 @@ services:
       - tools
     command: sh -c "npm install -g pnpm && pnpm install && pnpm import:csv"
 
-# No named volumes needed - using local directory persistence
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bb-gold-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${BACKEND_PORT:-4000}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${POSTGRES_PORT:-5432}
+      DATABASE_NAME: ${POSTGRES_DB:-bb_gold}
+      DATABASE_USER: ${POSTGRES_USER:-bb_user}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    # **สำคัญ**: ไม่ mount ./backend ที่จะทับ dist ใน image (ใช้ image ที่ถูก build แล้ว)
+    # ถ้าต้องการ dev-mode ให้สร้าง docker-compose.override.yml แยกต่างหาก
+    networks:
+      - bb-gold-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bb-gold-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:4000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    # ไม่ mount ./frontend by default เพื่อให้ใช้ built artifact ใน image
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - bb-gold-network
 
 networks:
   bb-gold-network:

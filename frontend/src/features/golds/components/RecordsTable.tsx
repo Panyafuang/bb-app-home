@@ -14,9 +14,7 @@ export default function RecordsTable({
   rows,
   loading = false,
   onDeleted,
-  onEdit,
-  page = 1,
-  limit = 100,
+  onEdit
 }: {
   rows: any[];
   loading?: boolean;

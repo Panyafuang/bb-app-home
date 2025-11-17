@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaFileCsv, FaFilePdf } from "react-icons/fa6";
 import { saveAs } from "file-saver";

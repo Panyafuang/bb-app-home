@@ -139,7 +139,7 @@ export interface ListParams {
   shipping_agent?: ShippingAgent | "";
 
   sort?: Sort;
-
+  calculated_loss?: number | null;
   // ❌ (ลบ) category, gold_out_min/max, ฯลฯ
 }
 

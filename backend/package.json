@@ -3,17 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "dev": "node --watch --env-file=.env --loader ts-node/esm ./src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify --respawn --pretty src/server.ts",
     "build": "tsc",
-    "start": "node --env-file=.env ./dist/server.js"
+    "start": "node -r dotenv/config ./dist/server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "debug": "^4.4.3",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
     "pg": "^8.16.3"

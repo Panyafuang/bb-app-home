@@ -10,7 +10,6 @@ import type {
 
 const BASE = "/api/v1/gold_records";
 
-
 // --- Helper function
 /** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
 function toDecimalFromPercentInput(str: string): number | null {
@@ -24,7 +23,6 @@ function toDecimalFromPercentInput(str: string): number | null {
   // ถ้าผู้ใช้พิมพ์ค่าน้อยกว่า 1 (เช่น 0.06) ให้ใช้ค่านั้นเลย
   return n > 1 ? n / 100 : n;
 }
-
 
 // ช่วยสร้าง query string โดยตัดค่าว่าง/undefined ออก
 function toQS(params: Record<string, any>) {

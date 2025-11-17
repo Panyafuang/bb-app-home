@@ -1,13 +1,11 @@
-import { FiMenu, FiBell, FiSearch } from "react-icons/fi";
+import { FiMenu, FiBell } from "react-icons/fi";
 import LanguageToggle from "@/components/LanguageToggle";
-import { useTranslation } from "react-i18next";
 
 export default function Navbar({
   onToggleSidebar,
 }: {
   onToggleSidebar: () => void;
 }) {
-  const { t } = useTranslation("common");
 
   return (
     // fixed เต็มความกว้าง (ตามที่ตั้งไว้ก่อนหน้า)
