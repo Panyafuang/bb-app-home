@@ -1,15 +1,15 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import { useGoldsQuery } from "@/features/golds/hooks/useGoldsQuery";
 import RecordsTable from "@/features/golds/components/RecordsTable";
 import Pagination from "@/components/ui/Pagination";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useTranslation } from "react-i18next";
 import SearchBar from "@/features/golds/components/SearchBar";
 import { useCreateGold } from "@/features/golds/hooks/useCreateGold";
 import GoldForm from "@/features/golds/components/GoldForm";
 import ExportButtons from "@/features/golds/components/ExportButtons";
-import { useState } from "react";
 import { updateGold } from "@/api/goldsClient";
-
 
 export default function GoldListPage() {
   const { t } = useTranslation("common");
@@ -50,19 +50,6 @@ export default function GoldListPage() {
             await updateGold(editingRow.id, dto); // ต้อง import API updateGold
             setEditingRow(null); // กลับเป็น create mode
             refetch();
-
-            // try {
-            //   // call backend update API
-            //   await updateGold(editingRow.id, dto);
-            //   // clear editing state -> กลับเป็น create mode
-            //   setEditingRow(null);
-            //   // reload data
-            //   await refetch();
-            // } catch (err) {
-            //   // คุณอาจต้องการแสดง toast / notification ที่นี่
-            //   console.error("Update failed", err);
-            //   throw err; // ให้ GoldForm เห็น error (ถ้าต้องการ)
-            // }
           } else {
             // ----- CREATE -----
             await m.mutateAsync(dto);
@@ -71,8 +58,7 @@ export default function GoldListPage() {
         }}
       />
 
-      <hr className="w-48 h-1 mx-auto my-4 bg-gray-300 border-0 rounded-sm md:my-10"></hr>
-      <div className="border border-gray-200 rounded-2xl p-4 mt-7">
+      <div className="border border-gray-200 rounded-2xl p-4 mt-7 bg-white">
         <div className="flex justify-between px-4">
           <h5
             className="mb-4 text-2xl font-semibold text-gray-700 md:text-xl lg:text-3xl"
@@ -81,7 +67,7 @@ export default function GoldListPage() {
             {t("header.transactions")}
           </h5>
           {/* Exports */}
-          <ExportButtons data={rows} filename="gold_records" />
+          <ExportButtons />
         </div>
 
         <SearchBar onChange={setFilters} onSubmit={refetch} />

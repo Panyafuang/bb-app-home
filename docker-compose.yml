@@ -1,5 +1,7 @@
-# docker-compose.yml — วางทับได้เลย
+version: '3.8'
+
 services:
+  # --- Database (Postgres) - (จากไฟล์เดิมของคุณ) ---
   postgres:
     image: postgres:15-alpine
     container_name: bb-gold-postgres
@@ -23,6 +25,7 @@ services:
     networks:
       - bb-gold-network
 
+  # --- Adminer - (จากไฟล์เดิมของคุณ) ---
   adminer:
     image: adminer:4.8.1
     container_name: bb-gold-adminer
@@ -35,6 +38,47 @@ services:
     networks:
       - bb-gold-network
 
+  # --- ✅ (เพิ่มใหม่) Backend (Node.js API) ---
+  backend:
+    build:
+      context: . # (Build context คือ root ของ monorepo)
+      dockerfile: ./backend/Dockerfile # (ไฟล์ Dockerfile ที่เราสร้าง)
+    container_name: bb-gold-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-4000}:4000" # (เปิด port 4000)
+    environment:
+      # ❗️ (สำคัญ) ชี้ไปที่ service 'postgres' (ตามไฟล์ของคุณ)
+      DB_HOST: postgres 
+      DB_PORT: 5432
+      # ❗️ (สำคัญ) ใช้ credentials จาก service 'postgres'
+      DB_USER: ${POSTGRES_USER:-bb_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
+      DB_DATABASE: ${POSTGRES_DB:-bb_gold}
+      DATABASE_URL: ${DATABASE_URL}
+      DEBUG: "app:*" 
+    depends_on:
+      postgres:
+        condition: service_healthy # (รอให้ DB พร้อมใช้งานก่อน)
+    networks:
+      - bb-gold-network
+
+  # --- ✅ (เพิ่มใหม่) Frontend (React + Nginx) ---
+  frontend:
+    build:
+      context: . # (Build context คือ root ของ monorepo)
+      dockerfile: ./frontend/Dockerfile # (ไฟล์ Dockerfile ที่เราสร้าง)
+    container_name: bb-gold-frontend
+    restart: unless-stopped
+    ports:
+      # ❗️ (สำคัญ) แมปพอร์ต 5173 (ที่คุณคุ้นเคย) ไปยัง port 80 (ของ Nginx)
+      - "${FRONTEND_PORT:-5173}:80" 
+    depends_on:
+      - backend # (รอให้ backend เริ่มก่อน Nginx ถึงจะ proxy ถูก)
+    networks:
+      - bb-gold-network
+
+  # --- Grafana - (จากไฟล์เดิมของคุณ) ---
   grafana:
     image: grafana/grafana:10.2.0
     container_name: bb-gold-grafana
@@ -57,6 +101,7 @@ services:
       - bb-gold-network
     user: "472:472"
 
+  # --- Importer - (จากไฟล์เดิมของคุณ) ---
   importer:
     image: node:18-alpine
     container_name: bb-gold-importer
@@ -78,51 +123,7 @@ services:
       - tools
     command: sh -c "npm install -g pnpm && pnpm install && pnpm import:csv"
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: bb-gold-backend
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
-    environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${BACKEND_PORT:-4000}
-      DATABASE_HOST: postgres
-      DATABASE_PORT: ${POSTGRES_PORT:-5432}
-      DATABASE_NAME: ${POSTGRES_DB:-bb_gold}
-      DATABASE_USER: ${POSTGRES_USER:-bb_user}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
-    ports:
-      - "${BACKEND_PORT:-4000}:4000"
-    # **สำคัญ**: ไม่ mount ./backend ที่จะทับ dist ใน image (ใช้ image ที่ถูก build แล้ว)
-    # ถ้าต้องการ dev-mode ให้สร้าง docker-compose.override.yml แยกต่างหาก
-    networks:
-      - bb-gold-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: bb-gold-frontend
-    restart: unless-stopped
-    env_file:
-      - ./frontend/.env
-    environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:4000}
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
-    # ไม่ mount ./frontend by default เพื่อให้ใช้ built artifact ใน image
-    depends_on:
-      backend:
-        condition: service_started
-    networks:
-      - bb-gold-network
+# ❌ (ลบ) 'volumes' ที่อยู่ด้านนอกสุด เพราะไฟล์ของคุณใช้ bind mount
 
 networks:
   bb-gold-network:

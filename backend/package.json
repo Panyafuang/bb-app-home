@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify --respawn --pretty src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify --respawn --pretty -r dotenv/config src/server.ts",
     "build": "tsc",
     "start": "node -r dotenv/config ./dist/server.js"
   },
@@ -17,7 +17,9 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
-    "pg": "^8.16.3"
+    "fast-csv": "^5.0.5",
+    "pg": "^8.16.3",
+    "pg-query-stream": "^4.10.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -25,6 +27,7 @@
     "@types/express": "^5.0.5",
     "@types/node": "^24.9.2",
     "@types/pg": "^8.15.6",
+    "@types/pg-query-stream": "^1.0.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }

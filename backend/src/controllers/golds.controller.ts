@@ -6,6 +6,9 @@ import debugFactory from "debug";
 import * as goldsService from "../services/golds.service";
 import { created, deleted, listOk, ok } from "../common/api-response";
 import { AppError } from "../common/app-error";
+import { pool } from "../db/pool";
+import { PoolClient } from "pg";
+import { format } from "fast-csv";
 
 const log = debugFactory("app:controller:golds");
 
@@ -135,6 +138,87 @@ export async function checkUnique(req: Request, res: Response, next: NextFunctio
     const isUnique = await goldsService.isReferenceUnique(reference);
     return ok(res, { isUnique }); // คืนค่า { isUnique: true } หรือ { isUnique: false }
   } catch (err) {
+    next(err);
+  }
+}
+
+
+/**
+ * GET /api/v1/gold_records/export-csv
+ */
+export async function exportGoldsCsv(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  let client: PoolClient | null = null;
+
+  // ✅ 1. สร้างตัวแปรกันการ Release ซ้ำ
+  let isReleased = false;
+  const safeRelease = () => {
+    if (!isReleased && client) {
+      client.release();
+      isReleased = true;
+      console.log("DB Client released successfully.");
+    }
+  };
+  try {
+    client = await pool.connect();
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="gold_records_${new Date().toISOString().split('T')[0]}.csv"`
+    );
+
+    const dbStream = await goldsService.getGoldsStream(client);
+
+    // ✅ (เปลี่ยน) สร้างตัวแปลง CSV ด้วย fast-csv
+    const csvStream = format({
+      headers: true, // ใช้ชื่อคอลัมน์จาก SQL (เช่น "Date", "Reference") เป็น Header เลย
+      writeBOM: true, // (Optional) เพิ่ม BOM ให้ Excel เปิดแล้วภาษาไทยไม่เพี้ยน
+    })
+      .transform((row: any) => {
+        // (Optional) จัดรูปแบบวันที่ให้สวยงาม (ถ้าค่ามาเป็น Date Object)
+        return {
+          ...row,
+          "Date": row["Date"] ? new Date(row["Date"]).toISOString().split('T')[0] : "",
+        };
+      });
+
+    // ต่อท่อ: DB -> CSV -> Response
+    dbStream
+      .pipe(csvStream)
+      .pipe(res);
+
+    // กรณี 1: โหลดเสร็จสมบูรณ์
+    dbStream.on("end", () => {
+      safeRelease();
+    });
+
+    // กรณี 2: เกิด Error ระหว่าง Stream จาก DB
+    dbStream.on("error", (err) => {
+      console.error("Stream error:", err);
+      safeRelease();
+      if (!res.headersSent) res.status(500).send("Export failed");
+    });
+
+    // กรณี 3: User กดยกเลิก หรือเน็ตหลุด (Response ปิดตัว)
+    res.on("close", () => {
+      dbStream.destroy();
+      safeRelease();
+    });
+
+    // (เพิ่มเติม) กรณี CSV Stream Error
+    csvStream.on("error", (err) => {
+      console.error("CSV error:", err);
+      dbStream.destroy();
+      safeRelease();
+    });
+
+  } catch (err) {
+    // กรณี 4: Error ตั้งแต่ตอนเริ่ม (เช่น connect ไม่ได้)
+    safeRelease(); // ✅ ใช้ safeRelease
     next(err);
   }
 }

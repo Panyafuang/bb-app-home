@@ -1,6 +1,6 @@
 export type Ledger =
-  | "beauty bijoux"
-  | "Green gold"
+  | "Beauty Bijoux"
+  | "Green Gold"
   | "Palladium"
   | "Platinum"
   | "PV Accessories"
@@ -15,8 +15,24 @@ export const LEDGER_LIST = [
   "PV Fine Gold",
 ] as const;
 
+export const SHIPPING_AGENT = [
+  "FedEx",
+  "DHL",
+  "RK International",
+  "Ferrari",
+  "Brinks",
+  "Kerry Express",
+  "Flash Express",
+  "Thailand Post",
+  "Others",
+] as const;
+
+
+export const STATUS_LIST_IN = ["Purchased", "Received"];
+export const STATUS_LIST_OUT = ["Invoiced", "Returned"];
+
 // (กลุ่ม Gold)
-export const FINENESS_GOLD_NUMERIC = [333, 375, 585, 750, 950, 999];
+export const FINENESS_GOLD_NUMERIC = [333, 375, 417, 750, 916, 958, 999.9];
 // (กลุ่ม Palladium)
 export const FINENESS_PALLADIUM_NUMERIC = [140, 950];
 // (กลุ่ม Platinum)

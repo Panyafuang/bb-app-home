@@ -6,8 +6,9 @@ import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useDeleteGold } from "@/features/golds/hooks/useDeleteGold"; // Custom Hook จาก React Query
-import { formatDate } from "@/utils/utils";
+import { formatThaiDate } from "@/utils/utils";
 import { finenessToKarat } from "@/utils/utils";
+import CopyButton from "@/components/CopyButton";
 // import { useNavigate } from "react-router-dom";
 
 export default function RecordsTable({
@@ -28,7 +29,7 @@ export default function RecordsTable({
   const del = useDeleteGold();
   // เก็บ ID ของรายการที่ผู้ใช้เลือกกดปุ่มลบ
   const [targetId, setTargetId] = useState<string | null>(null);
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   // const navigate = useNavigate();
 
   /** ฟังก์ชันการลบ (Business Logic) */
@@ -136,13 +137,17 @@ export default function RecordsTable({
                   className="bg-white border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="border border-gray-200 px-6 py-4">
-                    {formatDate(r.timestamp_tz, i18n.language)}
+                    {/* {formatDate(r.timestamp_tz, i18n.language)} */}
+                    {formatThaiDate(r.timestamp_tz)}
                   </td>
                   <td className="border border-gray-200 px-6 py-4 min-w-[180px]">
                     {r.ledger}
                   </td>
                   <td className="border border-gray-200 px-6 py-4 min-w-[180px]">
-                    {r.reference_number}
+                    <div className="flex items-center gap-2">
+                    <span className="whitespace-nowrap">{r.reference_number}</span>
+                    <CopyButton value={r.reference_number} />
+                    </div>
                   </td>
                   <td className="border border-gray-200 px-6 py-4 min-w-[180px]">
                     {r.related_reference_number}
@@ -191,9 +196,10 @@ export default function RecordsTable({
                     {r.shipping_agent}
                   </td>
                   <td className="border border-gray-200 px-6 py-4 text-right">
-                    {r.calculated_loss != null
+                    {/* {r.calculated_loss != null
                       ? `${(r.calculated_loss * 100).toFixed(2)}%`
-                      : ""}
+                      : ""} */}
+                      {r.calculated_loss != null ? r.calculated_loss : ""}
                   </td>
 
                   <td className="border border-gray-200 px-6 py-4 min-w-[220px]">

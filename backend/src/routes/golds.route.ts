@@ -11,25 +11,14 @@ import {
   FINENESS_PALLADIUM_NUMERIC,
   FINENESS_PLATINUM_NUMERIC,
   ALL_FINENESS_VALUES_NUMERIC,
+  SHIPPING_AGENT,
+  STATUS_LIST_IN,
+  STATUS_LIST_OUT,
 } from "../types/golds";
 
 const router = Router();
 
-// status (import, export)
-const STATUS_LIST_IN = ["purchased", "received"];
-const STATUS_LIST_OUT = ["invoiced", "returned"];
 
-const SHIPPING_AGENT = [
-  "fedex",
-  "dhl",
-  "rk international",
-  "ferrari",
-  "brinks",
-  "kerry express",
-  "flash express",
-  "thailand post",
-  "others",
-] as const;
 
 const getGoldsValidation = [
   query("page")
@@ -171,7 +160,6 @@ const createGoldValidation = [
     .optional({ checkFalsy: true })
     .trim()
     .isString()
-    .toLowerCase()
     .custom((value, { req }) => {
       if (!value) return true; // ถ้าไม่ส่งมา (optional) ก็ถือว่าผ่าน
 
@@ -252,7 +240,6 @@ const updateGoldValidation = [
   body("status")
     .optional({ checkFalsy: true })
     .trim()
-    .toLowerCase()
     .custom((value, { req }) => {
       if (!value) return true;
       const goldIn = Number(req.body.gold_in_grams ?? 0);
@@ -276,6 +263,10 @@ const updateGoldValidation = [
       return true;
     }),
 ];
+
+// (ควรวางไว้ก่อน /:id เพื่อไม่ให้ express สับสนว่า 'export-csv' คือ id)
+// GET: /api/v1/gold_records/export-csv
+router.get("/export-csv", goldsController.exportGoldsCsv);
 
 // GET: /api/v1/gold_records/check-unique?reference=<REFERENCE NUM>
 router.get("/check-unique", goldsController.checkUnique);

@@ -99,7 +99,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               ⭐ ใส่กล่องพื้นหลังของแต่ละหน้า
               คุณสามารถลบกรอบขาวนี้ออกได้ ถ้าอยากให้หน้าดิบแบบ dashboard 
             */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            {/* <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"> */}
+            <div>
               {children}
             </div>
           </div>

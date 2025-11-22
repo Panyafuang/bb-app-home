@@ -6,6 +6,8 @@ import * as goldsRepo from "../modules/golds/golds.repo";
 import { CreateGoldDto, GoldRecord, RawSearchParams, UpdateGoldDto } from "../types/golds";
 import { withTx } from "../db/tx";
 import { AppError } from "../common/app-error";
+import { pool } from "../db/pool";
+import { PoolClient } from "pg";
 
 const log = debugFactory("app:service:golds");
 
@@ -161,4 +163,10 @@ export async function isReferenceUnique(reference: string): Promise<boolean> {
   }
   const exists = await goldsRepo.checkReferenceExists(reference);
   return !exists; // คืนค่า true ถ้า "ไม่ซ้ำ"
+}
+
+export async function getGoldsStream(client: PoolClient) {
+  log("getGoldsStream");
+
+  return goldsRepo.getGoldRecordsStream(client);
 }

@@ -24,13 +24,6 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={qc}>
       <BrowserRouter>
         <AppShell>
-          {/* ✅ Toast แจ้งเตือน CRUD หรือ error */}
-          {/* <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            theme="colored"
-            newestOnTop
-          /> */}
           <ToastI18nProvider /> {/* ✅ ใช้ตัวที่ผูกกับ i18n */}
           {/* กำหนดเส้นทางหน้า (routes) */}
           <Routes>

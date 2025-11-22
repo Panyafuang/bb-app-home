@@ -1,10 +1,3 @@
-/**
- * features/golds/types.ts
- * (เวอร์ชันอัปเดต V4 - Schema 17 คอลัมน์ + Logic V2)
- */
-
-// --- 1. Constants (ค่าคงที่สำหรับ Dropdowns) ---
-
 // (Ledger List 6 ค่า)
 export const LEDGERS = [
   "Beauty Bijoux",
@@ -62,7 +55,6 @@ export const FINENESS_MAP_PLATINUM = [
   { label: "95%", value: 950 },
 ];
 
-// --- 2. Type Definitions (ประเภทข้อมูล) ---
 
 // (Type ที่ดึงมาจาก Constants)
 export type Ledger = (typeof LEDGERS)[number];
@@ -142,8 +134,6 @@ export interface ListParams {
   calculated_loss?: number | null;
   // ❌ (ลบ) category, gold_out_min/max, ฯลฯ
 }
-
-// --- 3. Wrapper Types (เหมือนเดิม) ---
 
 export interface Paged<T> {
   items: T[];

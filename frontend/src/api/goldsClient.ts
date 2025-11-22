@@ -98,3 +98,14 @@ export async function checkRefUnique(reference: string) {
 
   return data.data.isUnique; // คืนค่า true ถ้า "ไม่ซ้ำ"
 }
+
+/**
+ * ฟังก์ชันสำหรับ Export CSV
+ * เราต้องระบุ responseType: 'blob' เพื่อให้ Axios รู้ว่านี่ไม่ใช่ JSON แต่เป็นไฟล์
+ */
+export async function exportGoldsCsv() {
+  const response = await api.get("/api/v1/gold_records/export-csv", {
+    responseType: "blob", // ❗️ สำคัญมาก: บอกว่าขอรับข้อมูลเป็นไฟล์ (Blob)
+  });
+  return response.data; // คืนค่าเป็น Blob Object
+}

@@ -1,45 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState, useEffect } from "react";
-
-// --- Constants สำหรับ Dropdowns ---
-const LEDGERS = [
-  "Beauty Bijoux",
-  "Green Gold",
-  "Palladium",
-  "Platinum",
-  "PV Accessories",
-  "PV Fine Gold",
-] as const;
-
-// (Fineness Maps - เหมือนใน GoldForm)
-export const FINENESS_MAP_GOLD = [
-  { label: '8K', value: 333 },
-  { label: '9K', value: 375 },
-  { label: '10K', value: 417 },
-  { label: '18K', value: 750 },
-  { label: '22K', value: 916 },
-  { label: '23K', value: 958 },
-  { label: '24K', value: 999 },
-]; 
-export const FINENESS_MAP_PALLADIUM = [
-  { label: '14%', value: 140 },
-  { label: '95%', value: 950 },
-];
-export const FINENESS_MAP_PLATINUM = [
-  { label: '14%', value: 140 },
-  { label: '95%', value: 950 },
-];
-const SHIPPING_AGENT = [
-    "FedEx",
-    "DHL",
-    "RK International",
-    "Ferrari",
-    "Brinks",
-    "Kerry Express",
-    "Flash Express",
-    "Thailand Post",
-    "Others",
-] as const;
+import {
+  FINENESS_MAP_GOLD,
+  FINENESS_MAP_PALLADIUM,
+  FINENESS_MAP_PLATINUM,
+  LEDGERS,
+  SHIPPING_AGENT_LIST,
+} from "../types";
+import { FaFilterCircleXmark } from "react-icons/fa6";
 
 // กำหนดค่าเริ่มต้นสำหรับ Reset
 const initialState = {
@@ -167,7 +135,6 @@ export default function SearchBar({
           type="date"
           className={inputStyle}
           max={getTodayISO()}
-
           onChange={(e) => handleChange("from", e.target.value)}
         />
       </div>
@@ -255,7 +222,7 @@ export default function SearchBar({
           onChange={(e) => handleChange("shipping_agent", e.target.value)}
         >
           <option value="">{t("search.all")}</option>
-          {SHIPPING_AGENT.map((l) => (
+          {SHIPPING_AGENT_LIST.map((l) => (
             <option key={l} value={l}>
               {l}
             </option>
@@ -268,8 +235,9 @@ export default function SearchBar({
         <button
           type="button"
           onClick={handleClear}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
+          <FaFilterCircleXmark />
           {t("search.clear")}
         </button>
       </div>

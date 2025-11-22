@@ -9,6 +9,7 @@ import {
   Ledger,
   UpdateGoldDto,
 } from "../../types/golds";
+import QueryStream from "pg-query-stream";
 
 const log = debugFactory("app:repo:golds");
 const GOLD_RECORD = `gold_record`;
@@ -335,7 +336,6 @@ export async function deleteGold(c: PoolClient, id: string): Promise<boolean> {
 }
 
 /**
- * (เพิ่มฟังก์ชันนี้)
  * ตรวจสอบว่า reference_number นี้มีอยู่ในฐานข้อมูลหรือไม่
  * @param reference - เลขอ้างอิงที่ต้องการตรวจสอบ
  * @returns true ถ้า "มีอยู่แล้ว" (ซ้ำ), false ถ้า "ยังไม่มี"
@@ -354,4 +354,41 @@ export async function checkReferenceExists(
   );
   // rowCount can be null in some typings/environments; coalesce to 0 before comparison
   return (res.rowCount ?? 0) > 0;
+}
+
+
+/**
+ * สร้าง Stream สำหรับดึงข้อมูลทั้งหมด (หรือตาม filter)
+ * หมายเหตุ: ฟังก์ชันนี้ต้องการ client ที่ connect แล้ว (ไม่ใช่ pool)
+ */
+export function getGoldRecordsStream(c: PoolClient) {
+  log("getGoldRecordsStream");
+
+  // 1. สร้าง Query ที่เราต้องการ (เรียงลำดับสำคัญมากสำหรับการ export)
+  const sql = `
+  SELECT
+    timestamp_tz as "Date",
+    reference_number as "Reference",
+    ledger as "Ledger",
+    gold_in_grams as "Gold In (g)",
+    gold_out_grams as "Gold Out (g)",
+    status as "Status",
+    counterpart as "Counterpart",
+    remarks as "Remarks", 
+    calculated_loss as "Calculated Loss (g)", 
+    related_reference_number as "Related Reference Number", 
+    fineness as "Fineness",
+    good_details as "Good Details", 
+    shipping_agent as "Shipping Agent"
+  FROM ${GOLD_RECORD}
+  ORDER BY timestamp_tz DESC
+  `;
+
+  // 2. สร้าง QueryStream object (ยังไม่ได้เริ่มดึงข้อมูลจริง จนกว่าจะถูกอ่าน)
+  const query = new QueryStream(sql);
+
+  // 3. สั่งให้ client เริ่ม query โดยใช้ stream นี้
+  const stream = c.query(query);
+
+  return stream;
 }

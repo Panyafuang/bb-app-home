@@ -28,7 +28,7 @@
     "status": "สถานะ",
     "good_details": "รายละเอียดสินค้า",
     "shipping_agent": "ตัวแทนขนส่ง",
-    "calculated_loss": "น้ำหนักที่สูญเสีย (คำนวณ)"
+    "calculated_loss": "ทองสูญเสีย (กรัม)"
   },
 
   "modal.delete.title": "ยืนยันการลบ",
@@ -159,7 +159,8 @@
   "button": {
     "exports": {
       "pdf": "Export PDF",
-      "csv": "Export CSV"
+      "csv": "Export CSV",
+      "Preparing_export": "Preparing export..."
     }
   }
 }
