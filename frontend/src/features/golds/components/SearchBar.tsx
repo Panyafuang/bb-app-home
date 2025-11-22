@@ -43,13 +43,9 @@ export default function SearchBar({
   const toRef = useRef<HTMLInputElement>(null);
   const refRef = useRef<HTMLInputElement>(null);
   const counterpartRef = useRef<HTMLInputElement>(null);
-  const catRef = useRef<HTMLSelectElement>(null);
   const ledRef = useRef<HTMLSelectElement>(null);
   const shippingAgentRef = useRef<HTMLSelectElement>(null);
   const finenessRef = useRef<HTMLSelectElement>(null);
-  const minRef = useRef<HTMLInputElement>(null);
-  const maxRef = useRef<HTMLInputElement>(null);
-  const lossRef = useRef<HTMLInputElement>(null);
 
   const inputStyle =
     "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-white text-base focus:ring-blue-500 focus:border-blue-500";
@@ -84,7 +80,6 @@ export default function SearchBar({
       onChange(newFilters);
       if (finenessRef.current) finenessRef.current.value = "";
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.ledger]);
 
   // Helper Func
@@ -110,13 +105,9 @@ export default function SearchBar({
     if (toRef.current) toRef.current.value = "";
     if (refRef.current) refRef.current.value = "";
     if (counterpartRef.current) counterpartRef.current.value = "";
-    if (catRef.current) catRef.current.value = "";
     if (ledRef.current) ledRef.current.value = "";
     if (shippingAgentRef.current) shippingAgentRef.current.value = "";
     if (finenessRef.current) finenessRef.current.value = "";
-    if (minRef.current) minRef.current.value = "";
-    if (maxRef.current) maxRef.current.value = "";
-    if (lossRef.current) lossRef.current.value = "";
   }
 
   return (
