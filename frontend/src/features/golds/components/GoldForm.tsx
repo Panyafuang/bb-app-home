@@ -2,11 +2,20 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { checkRefUnique as apiCheckRefUnique } from "@/api/goldsClient";
-// (สมมติว่าคุณมี utils นี้อยู่แล้ว ถ้าไม่มีให้ใช้ new Date().toISOString().slice(0, 10) แทน)
-import { COMPANY_FOUNDED, getTodayISO } from "@/utils/utils"; 
-import { LEDGERS, COUNTERPART_LIST, STATUS_OPTIONS_IN, STATUS_OPTIONS_OUT, SHIPPING_AGENT_LIST, FINENESS_MAP_GOLD, FINENESS_MAP_PALLADIUM, FINENESS_MAP_PLATINUM } from "../types";
-
-
+import { COMPANY_FOUNDED, getTodayISO } from "@/utils/utils";
+import {
+  LEDGERS,
+  COUNTERPART_LIST,
+  STATUS_OPTIONS_IN,
+  STATUS_OPTIONS_OUT,
+  SHIPPING_AGENT_LIST,
+  FINENESS_MAP_GOLD,
+  FINENESS_MAP_PALLADIUM,
+  FINENESS_MAP_PLATINUM,
+  COUNTERPART_LIST_FOR_CALC_LOSS_0_PERCENT,
+  COUNTERPART_LIST_FOR_CALC_LOSS_10_PERCENT,
+  COUNTERPART_LIST_FOR_CALC_LOSS_9_PERCENT,
+} from "../types";
 
 /** (Helper) เช็ค format YYYY-MM-DD และวันที่ถูกต้อง */
 function isValidIsoDate(s: string) {
@@ -19,18 +28,6 @@ const parseNumber = (v: any): number | null => {
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
 };
-
-/** (Helper) แปลง Input "6" หรือ "6%" หรือ "0.06" ให้เป็น Decimal 0.06 */
-function toDecimalFromPercentInput(str: string): number | null {
-  if (!str) return null;
-  const s = str.replace(/%/g, "").trim(); // ลบ %
-  if (s === "") return null;
-  const n = Number(s);
-  if (Number.isNaN(n)) return null;
-  // ถ้าผู้ใช้พิมพ์ค่ามากกว่า 1 (เช่น 6) ให้หาร 100
-  // ถ้าผู้ใช้พิมพ์ค่าน้อยกว่า 1 (เช่น 0.06) ให้ใช้ค่านั้นเลย
-  return n > 1 ? n / 100 : n;
-}
 
 /** (Helper) ตรวจสอบ Reference Unique (เชื่อม API จริง) */
 async function checkReferenceUniqueRemote(reference: string): Promise<boolean> {
@@ -49,9 +46,8 @@ async function checkReferenceUniqueRemote(reference: string): Promise<boolean> {
   }
 }
 
-/**
- * GoldForm Component
- */
+const LEDGERS_LIST_FOR_GERMANY_COUNTERPART = ["PV Accessories", "PV Fine Gold"];
+
 export default function GoldForm({
   mode,
   defaultValues,
@@ -76,21 +72,24 @@ export default function GoldForm({
   );
   const [direction, setDirection] = useState<"" | "IN" | "OUT">(
     defaultValues
-      ? Number(defaultValues.gold_out_grams) > 0 ? "OUT" : "IN"
+      ? Number(defaultValues.gold_out_grams) > 0
+        ? "OUT"
+        : "IN"
       : ""
   );
   const [weightGrams, setWeightGrams] = useState(
     defaultValues
-      ? String( defaultValues.gold_in_grams || defaultValues.gold_out_grams || "" )
+      ? String(
+          defaultValues.gold_in_grams || defaultValues.gold_out_grams || ""
+        )
       : ""
   );
   const [ledger, setLedger] = useState(defaultValues?.ledger || "");
-  
-  // ✅ (แก้ไข) Fineness Value as String (e.g., "333")
+
   const [fineness, setFineness] = useState(
     defaultValues?.fineness != null ? String(defaultValues.fineness) : ""
   );
-  
+
   const [relatedReference, setRelatedReference] = useState(
     defaultValues?.related_reference_number || ""
   );
@@ -106,25 +105,10 @@ export default function GoldForm({
   );
   const [remarks, setRemarks] = useState(defaultValues?.remarks || "");
 
-  // ✅ (แก้ไข) State สำหรับ Loss (คำนวณกลับจาก Grams -> % ตอนโหลด)
-  // const [calculatedLoss, setCalculatedLoss] = useState(() => {
-  //   const lossGrams = Number(defaultValues?.calculated_loss);
-  //   const weight = Number(defaultValues?.gold_in_grams || defaultValues?.gold_out_grams);
-    
-  //   if (lossGrams && weight && weight > 0) {
-  //     return ((lossGrams / weight) * 100).toFixed(2); 
-  //   }
-  //   return "";
-  // });
-  const [calculatedLoss, setCalculatedLoss] = useState(() => {
-    const lossGrams = Number(defaultValues?.calculated_loss);
-    const weight = Number(defaultValues?.gold_in_grams || defaultValues?.gold_out_grams);
-    if (lossGrams && weight && weight > 0) {
-      // คำนวณกลับเป็น % แล้วปัดเศษเป็นจำนวนเต็ม (Math.round) เพื่อตัดทศนิยมทิ้งตอนโหลด
-      return Math.round((lossGrams / weight) * 100).toString();
-    }
-    return "";
-  });
+  /** บันทึกเป็น เปอร์เซ็นต์ + ทศนิยม 2 ตัว */
+  const [calculatedLoss, setCalculatedLoss] = useState(
+    defaultValues?.calculated_loss || ""
+  );
 
   // (State สำหรับ Validation)
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,17 +117,15 @@ export default function GoldForm({
     mode === "edit" ? true : null
   );
   const [checkingRef, setCheckingRef] = useState(false);
-  // const [isInitialLoad, setIsInitialLoad] = useState(true);
-  // useEffect(() => { setIsInitialLoad(false); }, []);
 
   // Refs
   const latestRef = useRef<string>(reference);
   const defaultValuesRef = useRef<any | null>(defaultValues ?? null);
-  useEffect(() => { defaultValuesRef.current = defaultValues ?? null; }, [defaultValues]);
+  useEffect(() => {
+    defaultValuesRef.current = defaultValues ?? null;
+  }, [defaultValues]);
 
-  // ============================
   // Sync defaultValues -> local state (เมื่อกด Edit)
-  // ============================
   useEffect(() => {
     if (!defaultValues) {
       if (mode === "create") handleReset();
@@ -151,13 +133,23 @@ export default function GoldForm({
     }
 
     if (mode === "edit") {
-      setDate(defaultValues.timestamp_tz ? String(defaultValues.timestamp_tz).slice(0, 10) : getTodayISO());
+      setDate(
+        defaultValues.timestamp_tz
+          ? String(defaultValues.timestamp_tz).slice(0, 10)
+          : getTodayISO()
+      );
       setReference(defaultValues.reference_number ?? "");
 
       // Direction
-      if (defaultValues.gold_out_grams != null && Number(defaultValues.gold_out_grams) > 0) {
+      if (
+        defaultValues.gold_out_grams != null &&
+        Number(defaultValues.gold_out_grams) > 0
+      ) {
         setDirection("OUT");
-      } else if (defaultValues.gold_in_grams != null && Number(defaultValues.gold_in_grams) > 0) {
+      } else if (
+        defaultValues.gold_in_grams != null &&
+        Number(defaultValues.gold_in_grams) > 0
+      ) {
         setDirection("IN");
       } else if (defaultValues.net_gold_grams != null) {
         setDirection(Number(defaultValues.net_gold_grams) < 0 ? "OUT" : "IN");
@@ -166,9 +158,15 @@ export default function GoldForm({
       }
 
       // Weight
-      if (defaultValues.gold_in_grams != null && Number(defaultValues.gold_in_grams) > 0) {
+      if (
+        defaultValues.gold_in_grams != null &&
+        Number(defaultValues.gold_in_grams) > 0
+      ) {
         setWeightGrams(String(defaultValues.gold_in_grams));
-      } else if (defaultValues.gold_out_grams != null && Number(defaultValues.gold_out_grams) > 0) {
+      } else if (
+        defaultValues.gold_out_grams != null &&
+        Number(defaultValues.gold_out_grams) > 0
+      ) {
         setWeightGrams(String(defaultValues.gold_out_grams));
       } else if (defaultValues.net_gold_grams != null) {
         setWeightGrams(String(Math.abs(Number(defaultValues.net_gold_grams))));
@@ -177,25 +175,28 @@ export default function GoldForm({
       }
 
       setLedger(defaultValues.ledger ?? "");
-      setFineness(defaultValues.fineness != null ? String(defaultValues.fineness) : "");
+      setFineness(
+        defaultValues.fineness != null ? String(defaultValues.fineness) : ""
+      );
       setRelatedReference(defaultValues.related_reference_number ?? "");
       setCounterpart(defaultValues.counterpart ?? "");
       setGoodDetails(defaultValues.good_details ?? "");
       setShippingAgent(defaultValues.shipping_agent ?? "");
       setRemarks(defaultValues.remarks ?? "");
-
-      // ✅ Loss: Grams -> Integer %
-      const lossG = Number(defaultValues.calculated_loss);
-      const w = Number(defaultValues.gold_in_grams || defaultValues.gold_out_grams);
-      if (lossG && w > 0) setCalculatedLoss(Math.round((lossG / w) * 100).toString());
-      else setCalculatedLoss("");
+      setCalculatedLoss(
+        defaultValues.calculated_loss != null
+          ? String(defaultValues.calculated_loss)
+          : ""
+      );
 
       // Status
       const rawStatus = defaultValues.status ?? "";
       if (typeof rawStatus === "string" && rawStatus.trim() !== "") {
         const s = rawStatus.trim();
         const normalized = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        if (["Purchased", "Received", "Invoiced", "Returned"].includes(normalized)) {
+        if (
+          ["Purchased", "Received", "Invoiced", "Returned"].includes(normalized)
+        ) {
           setStatus(normalized);
         } else {
           setStatus(s);
@@ -209,7 +210,6 @@ export default function GoldForm({
     } else if (mode === "create") {
       handleReset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues?.id, defaultValues?.timestamp_tz, mode]);
 
   // ============================
@@ -223,59 +223,110 @@ export default function GoldForm({
 
   // ✅ (อัปเดต) Fineness Options (Map)
   const finenessOptions = useMemo(() => {
-    if (['Beauty Bijoux', 'Green Gold', 'PV Accessories', 'PV Fine Gold'].includes(ledger)) {
+    if (
+      [
+        "Beauty Bijoux",
+        "Green Gold",
+        "PV Accessories",
+        "PV Fine Gold",
+      ].includes(ledger)
+    ) {
       return FINENESS_MAP_GOLD;
     }
-    if (ledger === 'Palladium') {
+    if (ledger === "Palladium") {
       return FINENESS_MAP_PALLADIUM;
     }
-    if (ledger === 'Platinum') {
+    if (ledger === "Platinum") {
       return FINENESS_MAP_PLATINUM;
     }
     return [];
   }, [ledger]);
 
-  // Reference Check
+  // Check unique reference_number แบบ real-time
   useEffect(() => {
+    // ตรวจสอบโหมดแก้ไข (Edit Mode)
     if (mode === "edit") {
-      setCheckingRef(false);
-      setRefUnique(true);
-      return;
+      setCheckingRef(false); // ปิดสถานะ "กำลังตรวจสอบ"
+      setRefUnique(true); // ถือว่าผ่าน (Unique=true) เพราะเป็นการแก้ไขข้อมูลเดิม
+      return; // จบการทำงาน ไม่ต้องเช็คต่อ
     }
-    latestRef.current = reference;
+    // อัปเดตค่าล่าสุดและเช็คค่าว่าง
+    latestRef.current = reference; // เก็บค่าปัจจุบันไว้ใน ref เพื่อใช้เช็ค Race Condition (การแซงกันของข้อมูล)
     if (reference.trim() === "") {
-      setCheckingRef(false);
-      setRefUnique(null);
+      setCheckingRef(false); // หยุดโหลด
+      setRefUnique(null); // เซ็ตค่าสถานะเป็นกลาง (null) ไม่ผิดและไม่ถูก
       return;
     }
+
+    // ตรวจสอบรูปแบบ (Validation Regex & Length) กรองเบื้องต้นก่อนยิง API ถ้ามีอักขระพิเศษที่ไม่ได้รับอนุญาต หรือยาวเกินไป จะหยุดทันที
+    // เช็คว่าต้องเป็นตัวอักษร A-Z, a-z, 0-9, _, -, space, / เท่านั้น
+    // และความยาวต้องไม่เกิน 100 ตัวอักษร
     if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference) || reference.length > 100) {
-      setRefUnique(null);
-      setCheckingRef(false);
+      setRefUnique(null); // ถ้า format ผิด ให้สถานะเป็นกลาง (หรืออาจจะจัดการเป็น false ก็ได้ตาม logic)
+      setCheckingRef(false); // หยุดโหลด
       return;
     }
-    let mounted = true;
-    setCheckingRef(true);
-    setRefUnique(null);
+
+    // เริ่มกระบวนการ Debounce (หน่วงเวลา 400 มิลลิวินาที)
+    // เหตุผล: ถ้าผู้ใช้พิมพ์เร็วๆ ต่อเนื่อง (เช่นพิมพ์ "A", "AB", "ABC") โค้ดจะไม่ยิง API ทันที แต่จะรอให้ผู้ใช้หยุดพิมพ์ครบ 400ms ก่อน ถึงจะเริ่มทำงานจริง เพื่อลดภาระ Server
+    let mounted = true; // ตัวแปรเช็คว่า Component ยังอยู่บนหน้าจอไหม (กัน Memory Leak)
+    setCheckingRef(true); // เริ่มแสดง Loading (หมุนๆ)
+    setRefUnique(null); // เคลียร์สถานะเก่าออกไปก่อน
     const timer = window.setTimeout(async () => {
       try {
         const refToCheck = reference.trim();
-        latestRef.current = refToCheck;
-        const isUnique = await checkReferenceUniqueRemote(refToCheck);
-        if (!mounted) return;
+        latestRef.current = refToCheck; // อัปเดต ref อีกครั้งเพื่อยืนยันค่าที่จะเช็ค
+        const isUnique = await checkReferenceUniqueRemote(refToCheck); // เรียกฟังก์ชันไปเช็คที่หลังบ้าน (API)
+        if (!mounted) return; // ถ้า Component ถูกปิดไปแล้ว ไม่ต้องทำอะไรต่อ
+
+        // **สำคัญ** เช็ค Race Condition:
+        // ถ้าค่าปัจจุบันในกล่องข้อความ (latestRef) ไม่ตรงกับค่าที่ส่งไปเช็ค (refToCheck)
+        // แปลว่าผู้ใช้พิมพ์อะไรใหม่แทรกเข้ามาแล้ว ให้ทิ้งผลลัพธ์นี้ไปเลย
         if (latestRef.current !== refToCheck) return;
-        setRefUnique(Boolean(isUnique));
+
+        setRefUnique(Boolean(isUnique)); // อัปเดตผลลัพธ์ (True=ไม่ซ้ำ, False=ซ้ำ)
       } catch (err) {
         console.error("Reference check failed:", err);
-        if (mounted) setRefUnique(false);
+        if (mounted) setRefUnique(false); // ถ้า Error ตีว่าเป็นซ้ำ/ใช้ไม่ได้
       } finally {
-        if (mounted) setCheckingRef(false);
+        if (mounted) setCheckingRef(false); // ปิด Loading ไม่ว่าจะสำเร็จหรือล้มเหลว
       }
     }, 400);
     return () => {
-      mounted = false;
-      clearTimeout(timer);
+      mounted = false; // บอกว่า Component นี้ถูก Unmount หรือ Effect รันรอบใหม่แล้ว
+      clearTimeout(timer); // ยกเลิกตัวจับเวลา (Timeout) ของรอบก่อนหน้า
     };
   }, [reference, mode]);
+
+  // Set calculate loss value relate to counterpart
+  useEffect(() => {
+    if (COUNTERPART_LIST_FOR_CALC_LOSS_0_PERCENT.includes(counterpart)) {
+      setCalculatedLoss("0");
+    } else if (COUNTERPART_LIST_FOR_CALC_LOSS_9_PERCENT.includes(counterpart)) {
+      setCalculatedLoss("9");
+    } else if (
+      COUNTERPART_LIST_FOR_CALC_LOSS_10_PERCENT.includes(counterpart)
+    ) {
+      setCalculatedLoss("10");
+    } else {
+      setCalculatedLoss("");
+    }
+  }, [counterpart]);
+
+  // Fix counterpart if ledger is PV Fine Gold, PV Accessories
+  useEffect(() => {
+    const dv = defaultValuesRef.current;
+
+    if (LEDGERS_LIST_FOR_GERMANY_COUNTERPART.includes(ledger)) {
+      setCounterpart("Germany");
+    } else {
+      if (mode === "edit") {
+        setCounterpart(dv?.counterpart || "");
+      } else {
+        setCounterpart("");
+      }
+    }
+  }, [ledger, mode]);
 
   // Validation Logic
   const errors = useMemo(() => {
@@ -285,34 +336,31 @@ export default function GoldForm({
     if (date.trim() === "") e.date = t("validation.required");
     else if (!isValidIsoDate(date)) e.date = t("validation.date.invalidFormat");
     else if (date > today) e.date = t("validation.date.future");
-    else if (date < COMPANY_FOUNDED) e.date = t("validation.date.tooOld", { date: "11/03/1991" });
+    else if (date < COMPANY_FOUNDED)
+      e.date = t("validation.date.tooOld", { date: "11/03/1991" });
 
     if (reference.trim() === "") e.reference = t("validation.required");
-    else if (reference.length > 100) e.reference = t("validation.ref.maxLength");
-    else if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference)) e.reference = t("validation.ref.pattern");
+    else if (reference.length > 100)
+      e.reference = t("validation.ref.maxLength");
+    else if (!/^[A-Za-z0-9_\-\s\/]+$/.test(reference))
+      e.reference = t("validation.ref.pattern");
 
     if (direction === "") e.direction = t("validation.required");
 
     if (weightGrams.trim() === "") e.weight = t("validation.required");
     else if (weightNumGrams <= 0) e.weight = t("validation.weight.positive");
-    else if (weightNumGrams > 9999999.999) e.weight = t("validation.weight.max");
+    else if (weightNumGrams > 9999999.999)
+      e.weight = t("validation.weight.max");
 
     if (ledger.trim() === "") e.ledger = t("validation.required");
-
-    // (Validate Loss %)
-    if (calculatedLoss.trim() !== "") {
-      const dec = toDecimalFromPercentInput(calculatedLoss);
-      if (dec === null) e.calculated_loss = t("validation.loss.invalidFormat");
-      else if (dec < 0 || dec > 1) e.calculated_loss = t("validation.loss.range");
-    }
-
     return e;
-  }, [date, reference, direction, weightGrams, weightNumGrams, ledger, calculatedLoss, t]);
+  }, [date, reference, direction, weightGrams, weightNumGrams, ledger, t]);
 
   const canSubmit = Object.keys(errors).length === 0 && !checkingRef;
 
   // CSS
-  const inputStyle = "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
+  const inputStyle =
+    "block w-full p-2 text-gray-900 border border-gray-300 rounded-md bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500";
   const errorStyle = "border-red-500 ring-2 ring-red-100 border-2";
 
   // Reset Function
@@ -323,27 +371,32 @@ export default function GoldForm({
     setReference(dv?.reference_number || "");
 
     if (dv) {
-      if (dv.gold_out_grams != null && Number(dv.gold_out_grams) > 0) setDirection("OUT");
-      else if (dv.gold_in_grams != null && Number(dv.gold_in_grams) > 0) setDirection("IN");
-      else if (dv.net_gold_grams != null) setDirection(Number(dv.net_gold_grams) < 0 ? "OUT" : "IN");
+      if (dv.gold_out_grams != null && Number(dv.gold_out_grams) > 0)
+        setDirection("OUT");
+      else if (dv.gold_in_grams != null && Number(dv.gold_in_grams) > 0)
+        setDirection("IN");
+      else if (dv.net_gold_grams != null)
+        setDirection(Number(dv.net_gold_grams) < 0 ? "OUT" : "IN");
       else setDirection("");
     } else {
       setDirection("");
     }
 
-    if (dv?.gold_in_grams != null && Number(dv.gold_in_grams) > 0) setWeightGrams(String(dv.gold_in_grams));
-    else if (dv?.gold_out_grams != null && Number(dv.gold_out_grams) > 0) setWeightGrams(String(dv.gold_out_grams));
-    else if (dv?.net_gold_grams != null) setWeightGrams(String(Math.abs(Number(dv.net_gold_grams))));
+    if (dv?.gold_in_grams != null && Number(dv.gold_in_grams) > 0)
+      setWeightGrams(String(dv.gold_in_grams));
+    else if (dv?.gold_out_grams != null && Number(dv.gold_out_grams) > 0)
+      setWeightGrams(String(dv.gold_out_grams));
+    else if (dv?.net_gold_grams != null)
+      setWeightGrams(String(Math.abs(Number(dv.net_gold_grams))));
     else setWeightGrams("");
 
     setLedger(dv?.ledger || "");
     setRemarks(dv?.remarks || "");
-    
+
     // ✅ (Reset Loss %)
-    const lossG = Number(dv?.calculated_loss);
-    const w = Number(dv?.gold_in_grams || dv?.gold_out_grams);
-    if (lossG && w > 0) setCalculatedLoss(((lossG / w) * 100).toFixed(2));
-    else setCalculatedLoss("");
+    setCalculatedLoss(
+      dv?.calculated_loss != null ? String(dv.calculated_loss) : ""
+    );
 
     setRelatedReference(dv?.related_reference_number || "");
     setCounterpart(dv?.counterpart || "");
@@ -354,7 +407,10 @@ export default function GoldForm({
     if (typeof rawStatus === "string" && rawStatus.trim() !== "") {
       const s = rawStatus.trim();
       const normalized = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-      if (["Purchased", "Received", "Invoiced", "Returned"].includes(normalized)) setStatus(normalized);
+      if (
+        ["Purchased", "Received", "Invoiced", "Returned"].includes(normalized)
+      )
+        setStatus(normalized);
       else setStatus(s);
     } else {
       setStatus("");
@@ -368,22 +424,28 @@ export default function GoldForm({
   // Submit Function
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) { setShowErrors(true); return; }
+    if (!canSubmit) {
+      setShowErrors(true);
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       const now = new Date();
       const dateParts = date.split("-").map(Number);
-      const timestamp = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], now.getHours(), now.getMinutes(), now.getSeconds());
+      const timestamp = new Date(
+        dateParts[0],
+        dateParts[1] - 1,
+        dateParts[2],
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds()
+      );
 
       const w = Number(weightGrams);
-      // ✅ (คำนวณ) แปลง % เป็น Grams
-      let lossGramsToSend = null;
-      const lossDecimal = toDecimalFromPercentInput(calculatedLoss); 
-      if (lossDecimal !== null && !Number.isNaN(w)) {
-        // สูตร: น้ำหนัก * decimal (เช่น 2.000 * 0.50 = 1.000)
-        // ❗️ ปัดเศษให้เหลือ 2 ตำแหน่ง
-        lossGramsToSend = Number((w * lossDecimal).toFixed(2));
+      let lossToSend = null;
+      if (calculatedLoss !== "" && calculatedLoss != null) {
+        lossToSend = Number(calculatedLoss);
       }
 
       const dto: any = {
@@ -392,7 +454,7 @@ export default function GoldForm({
         ledger: ledger,
         gold_in_grams: direction === "IN" ? w : 0,
         gold_out_grams: direction === "OUT" ? w : 0,
-        calculated_loss: lossGramsToSend, // 👈 (ส่ง Grams)
+        calculated_loss: lossToSend, // 👈 ส่งค่าที่ User กรอก (เช่น 10) ไปเลย
         fineness: parseNumber(fineness), // 👈 (ส่ง Number)
         counterpart: counterpart || null,
         good_details: goodDetails || null,
@@ -430,59 +492,147 @@ export default function GoldForm({
     return <p className="mt-1 text-sm text-red-600">{errors[field]}</p>;
   };
 
+  // ตรวจสอบว่า Counterpart ปัจจุบันอยู่ในกลุ่มที่ต้อง Lock ค่า Calculated Loss หรือไม่
+  const isCalculatedLossLocked = useMemo(() => {
+    const lockedGroups = [
+      ...COUNTERPART_LIST_FOR_CALC_LOSS_0_PERCENT,
+      ...COUNTERPART_LIST_FOR_CALC_LOSS_9_PERCENT,
+      ...COUNTERPART_LIST_FOR_CALC_LOSS_10_PERCENT,
+    ];
+    return lockedGroups.includes(counterpart);
+  }, [counterpart]);
+
+  // Disable field counterpart เป็น geramany หาก ledger เป็น PV Accessories, PV Fine Gold
+  const isCounterpartLocked = useMemo(() => {
+    return LEDGERS_LIST_FOR_GERMANY_COUNTERPART.includes(ledger);
+  }, [ledger]);
+
   return (
     <div className="border border-gray-200 bg-white rounded-2xl p-4">
       <div className="flex justify-between p-4">
-        <h5 className="mb-4 text-2xl font-semibold text-gray-700 md:text-xl lg:text-3xl" style={{ marginBottom: "0" }}>
-          {mode === "edit" ? `${t("form.title.edit")}` : `${t("form.title.new")}`}
+        <h5
+          className="mb-4 text-lg font-semibold text-gray-700 md:text-lg lg:text-xl"
+          style={{ marginBottom: "0" }}
+        >
+          {mode === "edit"
+            ? `${t("form.title.edit")}`
+            : `${t("form.title.new")}`}
         </h5>
         {mode === "edit" && (
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handleCancelEdit} className="rounded-lg px-3 py-2 text-sm border border-gray-200 hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="rounded-lg px-3 py-2 text-sm border border-gray-200 hover:bg-gray-50"
+            >
               {t("form.cancel_edit") || "Cancel Edit"}
             </button>
           </div>
         )}
       </div>
 
-      <form onSubmit={submit} className="grid grid-cols-1 gap-4 md:grid-cols-12 p-4">
+      <form
+        onSubmit={submit}
+        className="grid grid-cols-1 gap-4 md:grid-cols-12 p-4"
+      >
         {/* date */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.date")} <span className="text-red-600"> *</span> </label>
-          <input type="date" className={`${inputStyle} ${showErrors && errors.date ? errorStyle : ""}`} value={date} onChange={(e) => setDate(e.target.value)} max={getTodayISO()} min={COMPANY_FOUNDED} />
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.date")} <span className="text-red-600"> *</span>{" "}
+          </label>
+          <input
+            type="date"
+            className={`${inputStyle} ${
+              showErrors && errors.date ? errorStyle : ""
+            }`}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            max={getTodayISO()}
+            min={COMPANY_FOUNDED}
+          />
           <ErrorMessage field="date" />
         </div>
 
         {/* ledger */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.ledger")} <span className="text-red-600"> *</span> </label>
-          <select className={`${inputStyle} ${showErrors && errors.ledger ? errorStyle : ""}`} value={ledger} onChange={(e) => setLedger(e.target.value)}>
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.ledger")} <span className="text-red-600"> *</span>{" "}
+          </label>
+          <select
+            className={`${inputStyle} ${
+              showErrors && errors.ledger ? errorStyle : ""
+            }`}
+            value={ledger}
+            onChange={(e) => setLedger(e.target.value)}
+          >
             <option value="">Select…</option>
-            {LEDGERS.map((l) => <option key={l} value={l}>{l}</option>)}
+            {LEDGERS.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
           </select>
           <ErrorMessage field="ledger" />
         </div>
 
         {/* fineness */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.fineness")} </label>
-          <select className={inputStyle} value={fineness} onChange={(e) => setFineness(e.target.value)} disabled={!ledger}>
-            <option value=""> {ledger ? t("form.fineness_options.select_one") : t("form.fineness_options.select_ledger_first")} </option>
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.fineness")}{" "}
+          </label>
+          <select
+            className={inputStyle}
+            value={fineness}
+            onChange={(e) => setFineness(e.target.value)}
+            disabled={!ledger}
+          >
+            <option value="">
+              {" "}
+              {ledger
+                ? t("form.fineness_options.select_one")
+                : t("form.fineness_options.select_ledger_first")}{" "}
+            </option>
             {finenessOptions.map((option) => (
-              <option key={option.label} value={option.value}>{option.label}</option>
+              <option key={option.label} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </div>
 
         {/* reference */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.reference")} <span className="text-red-600"> *</span> </label>
-          <input className={`${inputStyle} ${(showErrors && errors.reference) ? errorStyle : ""} ${mode === "edit" ? "bg-gray-100 cursor-not-allowed" : ""}`} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={100} disabled={mode === "edit"} />
-          {mode === "edit" && <p className="mt-1 text-xs text-gray-500">{t("form.reference_number_readonly") || "Reference number ไม่สามารถแก้ไขได้หลังการสร้าง"}</p>}
-          {checkingRef && mode !== "edit" && <p className="mt-1 text-xs text-gray-500">{t("form.reference_number_checking")}</p>}
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.reference")} <span className="text-red-600"> *</span>{" "}
+          </label>
+          <input
+            className={`${inputStyle} ${
+              showErrors && errors.reference ? errorStyle : ""
+            } ${mode === "edit" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            maxLength={100}
+            disabled={mode === "edit"}
+          />
+          {mode === "edit" && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t("form.reference_number_readonly") ||
+                "Reference number ไม่สามารถแก้ไขได้หลังการสร้าง"}
+            </p>
+          )}
+          {checkingRef && mode !== "edit" && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t("form.reference_number_checking")}
+            </p>
+          )}
           {refUnique === false && !checkingRef && mode !== "edit" && (
             <div className="mt-2 p-3 mb-3 text-sm text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <span className="font-medium">Warning</span> <span className="ml-1">{t("form.reference_number_exists")}</span>
+              <span className="font-medium">Warning</span>{" "}
+              <span className="ml-1">{t("form.reference_number_exists")}</span>
             </div>
           )}
           <ErrorMessage field="reference" />
@@ -490,105 +640,251 @@ export default function GoldForm({
 
         {/* related reference */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.related_reference")} </label>
-          <input className={inputStyle} value={relatedReference} onChange={(e) => setRelatedReference(e.target.value)} />
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.related_reference")}{" "}
+          </label>
+          <input
+            className={inputStyle}
+            value={relatedReference}
+            onChange={(e) => setRelatedReference(e.target.value)}
+          />
         </div>
 
         {/* counterpart */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.counterpart")} </label>
-          <select className={inputStyle} value={counterpart} onChange={(e) => setCounterpart(e.target.value)}>
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.counterpart")}{" "}
+          </label>
+          <select
+            className={`${inputStyle} ${
+              isCalculatedLossLocked
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : ""
+            }`}
+            value={counterpart}
+            disabled={isCounterpartLocked}
+            onChange={(e) => setCounterpart(e.target.value)}
+          >
             <option value="">Select...</option>
-            {COUNTERPART_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
+            {COUNTERPART_LIST.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </div>
 
-
         {/* direction */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.direction")} <span className="text-red-600"> *</span> </label>
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.direction")} <span className="text-red-600"> *</span>{" "}
+          </label>
           <div className={`flex gap-2`}>
-            <button type="button" onClick={() => setDirection("IN")} className={`flex-1 rounded-xl border border-gray-200 p-2 ${direction === "IN" ? "border-green-600 ring-2 ring-green-200" : "hover:bg-gray-50"}`}>{t("form.in")}</button>
-            <button type="button" onClick={() => setDirection("OUT")} className={`flex-1 rounded-xl border border-gray-200 p-2 ${direction === "OUT" ? "border-red-600 ring-2 ring-red-200" : "hover:bg-gray-50"}`}>{t("form.out")}</button>
+            <button
+              type="button"
+              onClick={() => setDirection("IN")}
+              className={`flex-1 rounded-xl border border-gray-200 p-2 ${
+                direction === "IN"
+                  ? "border-green-600 ring-2 ring-green-200"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              {t("form.in")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDirection("OUT")}
+              className={`flex-1 rounded-xl border border-gray-200 p-2 ${
+                direction === "OUT"
+                  ? "border-red-600 ring-2 ring-red-200"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              {t("form.out")}
+            </button>
           </div>
           <ErrorMessage field="direction" />
         </div>
 
         {/* Weight */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.net_weight")} <span className="text-red-600"> *</span> </label>
-          <input type="number" step="0.001" className={`${inputStyle} ${showErrors && errors.weight ? errorStyle : ""}`} value={weightGrams} onChange={(e) => setWeightGrams(e.target.value)} />
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.net_weight")} <span className="text-red-600"> *</span>{" "}
+          </label>
+          <input
+            type="text"           // ✅ เปลี่ยนเป็น text เพื่อคุม format ได้เป๊ะกว่า
+            inputMode="decimal"   // ✅ เพื่อให้มือถือเด้งแป้นพิมพ์ตัวเลขขึ้นมา
+            className={`${inputStyle} ${
+              showErrors && errors.weight ? errorStyle : ""
+            }`}
+            value={weightGrams}
+            onChange={(e) => {
+              const val = e.target.value;
+
+              // ✅ Logic: ล็อกให้เป็น NUMERIC(10,3)
+              // Regular Expression อธิบาย:
+              // ^             -> เริ่มต้นข้อความ
+              // \d{0,7}       -> ตัวเลขจำนวนเต็ม ใส่ได้ 0 ถึง 7 หลัก (เพราะ 10 - 3 = 7)
+              // (\.\d{0,3})?  -> (กลุ่มทางเลือก) จุดทศนิยม ตามด้วยตัวเลข 0 ถึง 3 หลัก
+              // $             -> จบข้อความ
+              if (val == "" || /^\d{0,7}(\.\d{0,3})?$/.test(val)) {
+                setWeightGrams(val);
+              }
+            }}
+            placeholder="0.000"
+          />
           <ErrorMessage field="weight" />
         </div>
 
-
         {/* status */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.status")} </label>
-          <select className={inputStyle} value={status} onChange={(e) => setStatus(e.target.value)} disabled={!direction}>
-            <option value="">{direction ? t("form.status_options.select_one") : t("form.status_options.select_direction_first")}</option>
-            {direction === "IN" && STATUS_OPTIONS_IN.map((opt) => <option key={opt} value={opt}>{t(`form.status_options.${opt.toLowerCase()}`)}</option>)}
-            {direction === "OUT" && STATUS_OPTIONS_OUT.map((opt) => <option key={opt} value={opt}>{t(`form.status_options.${opt.toLowerCase()}`)}</option>)}
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.status")}{" "}
+          </label>
+          <select
+            className={inputStyle}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            disabled={!direction}
+          >
+            <option value="">
+              {direction
+                ? t("form.status_options.select_one")
+                : t("form.status_options.select_direction_first")}
+            </option>
+            {direction === "IN" &&
+              STATUS_OPTIONS_IN.map((opt) => (
+                <option key={opt} value={opt}>
+                  {t(`form.status_options.${opt.toLowerCase()}`)}
+                </option>
+              ))}
+            {direction === "OUT" &&
+              STATUS_OPTIONS_OUT.map((opt) => (
+                <option key={opt} value={opt}>
+                  {t(`form.status_options.${opt.toLowerCase()}`)}
+                </option>
+              ))}
           </select>
         </div>
 
-        {/* Calculated Loss */}
-        {/* <div className="md:col-span-3">
-          <label className="block text-sm font-medium"> {t("form.calculated_loss_percent")} </label>
-          <input type="text" className={`${inputStyle} ${showErrors && errors.calculated_loss ? errorStyle : ""}`} value={calculatedLoss} onChange={(e) => setCalculatedLoss(e.target.value)} placeholder="e.g. 5%" />
-          <ErrorMessage field="calculated_loss" />
-        </div> */}
-
         {/* ✅ Calculated Loss (Integer Only 0-100) */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium"> {t("form.calculated_loss_percent")} </label>
-          <input 
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.calculated_loss_percent")}{" "}
+          </label>
+          <input
             type="text" // ใช้ text เพื่อควบคุม input ได้ดีกว่า
-            className={`${inputStyle} ${showErrors && errors.calculated_loss ? errorStyle : ""}`} 
-            value={calculatedLoss} 
+            className={`${inputStyle} ${
+              showErrors && errors.calculated_loss ? errorStyle : ""
+            } ${
+              isCalculatedLossLocked
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : ""
+            }`}
+            value={calculatedLoss}
+            disabled={isCalculatedLossLocked}
             onChange={(e) => {
               // ✅ Logic ล็อกให้พิมพ์ได้แค่ตัวเลข 0-9 เท่านั้น (No dots, No commas)
               const val = e.target.value;
-              if (val === "" || /^\d+$/.test(val)) {
-                 // ถ้าเป็นตัวเลข เช็คว่าไม่เกิน 100
-                 if (val === "" || (Number(val) >= 0 && Number(val) <= 100)) {
-                    setCalculatedLoss(val);
-                 }
+              // ✅ 1. Regex ใหม่: อนุญาตตัวเลข และจุดทศนิยม (ไม่เกิน 2 ตำแหน่ง)
+              // ^\d* -> ตัวเลขกี่ตัวก็ได้ (หรือไม่มีก็ได้ เผื่อกรณีพิมพ์ .5)
+              // \.?     -> จุดทศนิยม (มีหรือไม่มีก็ได้)
+              // \d{0,2} -> ตัวเลขหลังจุด 0 ถึง 2 ตัว
+              if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
+                const numVal = Number(val);
+                // ✅ 2. Logic เช็คค่า:
+                // - ยอมให้เป็นค่าว่าง ""
+                // - ยอมให้เป็นจุด "." เฉยๆ (ขณะกำลังพิมพ์ เช่น จะพิมพ์ .5)
+                // - ถ้าเป็นตัวเลข ต้องอยู่ระหว่าง 0 ถึง 100
+                if (
+                  val === "" ||
+                  val === "." ||
+                  (numVal >= 0 && numVal <= 100)
+                ) {
+                  setCalculatedLoss(val);
+                }
               }
-            }} 
-            placeholder="0-100" 
+            }}
+            placeholder="0-100"
           />
           <ErrorMessage field="calculated_loss" />
         </div>
 
         {/* Shipping Agent */}
         <div className="md:col-span-4">
-          <label className="block text-sm font-medium"> {t("form.shipping_agent")} </label>
-          <select className={inputStyle} value={shippingAgent} onChange={(e) => setShippingAgent(e.target.value)}>
+          <label className="block text-sm font-medium">
+            {" "}
+            {t("form.shipping_agent")}{" "}
+          </label>
+          <select
+            className={inputStyle}
+            value={shippingAgent}
+            onChange={(e) => setShippingAgent(e.target.value)}
+          >
             <option value="">Select...</option>
-            {SHIPPING_AGENT_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
+            {SHIPPING_AGENT_LIST.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* Good Details */}
         <div className="md:col-span-6">
-          <label className="block text-sm font-medium">{t("form.good_details")}</label>
-          <textarea rows={4} className={inputStyle} value={goodDetails} onChange={(e) => setGoodDetails(e.target.value)} />
+          <label className="block text-sm font-medium">
+            {t("form.good_details")}
+          </label>
+          <textarea
+            rows={1}
+            className={inputStyle}
+            value={goodDetails}
+            onChange={(e) => setGoodDetails(e.target.value)}
+          />
         </div>
 
         {/* Remarks */}
         <div className="md:col-span-6">
-          <label className="block text-sm font-medium">{t("form.remarks")}</label>
-          <textarea rows={4} className={inputStyle} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+          <label className="block text-sm font-medium">
+            {t("form.remarks")}
+          </label>
+          <textarea
+            rows={1}
+            className={inputStyle}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+          />
         </div>
 
         {/* Buttons */}
         <div className="md:col-span-12 flex justify-end gap-2 self-end">
-          <button type="button" className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200" onClick={handleReset}>
+          <button
+            type="button"
+            className="rounded-lg px-4 py-2 hover:bg-gray-50 text-sm p-2 border border-gray-200"
+            onClick={handleReset}
+          >
             {t("form.reset")}
           </button>
-          <button type="submit" disabled={!canSubmit || isSubmitting} className={`rounded-lg px-4 py-2 text-white text-sm ${!canSubmit || isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}>
-            {isSubmitting ? t("form.saving") : mode === "edit" ? t("form.update") || "Update" : t("form.save") || "Save"}
+          <button
+            type="submit"
+            disabled={!canSubmit || isSubmitting}
+            className={`rounded-lg px-4 py-2 text-white text-sm ${
+              !canSubmit || isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {isSubmitting
+              ? t("form.saving")
+              : mode === "edit"
+              ? t("form.update") || "Update"
+              : t("form.save") || "Save"}
           </button>
         </div>
       </form>

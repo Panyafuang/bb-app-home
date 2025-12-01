@@ -109,3 +109,10 @@ export async function exportGoldsCsv() {
   });
   return response.data; // คืนค่าเป็น Blob Object
 }
+
+export async function getDashboardSummary() {
+  const { data } = await api.get("/api/v1/gold_records/summary");
+
+  const items = data?.data ?? [];
+  return items;
+}

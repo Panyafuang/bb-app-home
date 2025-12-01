@@ -30,10 +30,7 @@ export type SidebarProps = {
 
 const baseItem =
   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
-const linkClass = (isActive: boolean) =>
-  isActive
-    ? `${baseItem} bg-blue-100 text-blue-700`
-    : `${baseItem} text-gray-700 hover:bg-gray-100 hover:text-blue-600`;
+const linkClass = (isActive: boolean) => isActive ? `${baseItem} bg-blue-100 text-blue-700` : `${baseItem} text-gray-700 hover:bg-gray-100 hover:text-blue-600`;
 
 export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const { i18n } = useTranslation("common");
@@ -44,7 +41,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const items = [
     {
       type: "link",
-      to: "/",
+      to: "/dashboard",
       icon: <LuLayoutDashboard />,
       label: isTH ? "แดชบอร์ด" : "Dashboard",
       end: true,
@@ -55,11 +52,11 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       icon: <LuShoppingCart />,
       label: isTH ? "อีคอมเมิร์ซ" : "E-commerce",
     },
-    {
-      type: "link",
-      to: "/inbox",
-      icon: <LuInbox />,
-      label: isTH ? "กล่องจดหมาย" : "Inbox",
+    { 
+      type: "link", 
+      to: "/inbox", 
+      icon: <LuInbox />, 
+      label: isTH ? "กล่องจดหมาย" : "Inbox" 
     },
     {
       type: "link",

@@ -1,11 +1,13 @@
-/** (Helper) แปลงค่าตัวเลขอย่างปลอดภัย */
+export const COMPANY_FOUNDED = "1991-03-11";
+
+/** แปลงค่าตัวเลขอย่างปลอดภัย */
 export function parseNumber(v: any): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
 }
 
-/** (Helper) ดึงค่าวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD */
+/** ดึงค่าวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD */
 export function getTodayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -85,16 +87,30 @@ export function formatThaiDate(isoString: string) {
   return `${day}/${month}/${year}`;
 };
 
-export const FINENESS_MAP_GOLD = [
-  { label: '8K', value: 333 }, { label: '9K', value: 375 }, { label: '10K', value: 417 },
-  { label: '18K', value: 750 }, { label: '22K', value: 916 }, { label: '23K', value: 958 },
-  { label: '24K', value: 999.9 },
-]; 
-export const FINENESS_MAP_PALLADIUM = [
-  { label: '14%', value: 140 }, { label: '95%', value: 950 },
-];
-export const FINENESS_MAP_PLATINUM = [
-  { label: '14%', value: 140 }, { label: '95%', value: 950 },
-];
+// ฟังก์ชันแปลง timestamp -> DD/MM/YYYY (ค.ศ.)
+export function formatThaiDateExceptYear(isoString: string) {
+  const date = new Date(isoString);
 
-export const COMPANY_FOUNDED = "1991-03-11";
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString();
+
+  return `${day}/${month}/${year}`;
+};
+
+/**
+ * จัดรูปแบบตัวเลข ใส่ลูกน้ำ (Comma) และทศนิยม
+ * @param num ตัวเลขที่ต้องการจัดรูปแบบ (number หรือ string)
+ * @param decimals จำนวนตำแหน่งทศนิยม (default = 3)
+ */
+export function formatNumber(num: number | string | null | undefined, decimals: number = 3): string {
+  if (num === null || num === undefined || num === "") return "0";
+
+  const n = Number(num);
+  if (isNaN(n)) return "0";
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(n);
+}

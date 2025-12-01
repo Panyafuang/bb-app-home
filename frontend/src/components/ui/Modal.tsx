@@ -1,4 +1,3 @@
-// ✅ Modal แบบพื้นฐาน ใช้ยืนยันการกระทำที่สำคัญ (ลบข้อมูล ฯลฯ)
 import { useTranslation } from "react-i18next";
 
 export default function Modal({

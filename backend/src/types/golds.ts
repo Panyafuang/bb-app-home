@@ -24,6 +24,7 @@ export const SHIPPING_AGENT = [
   "Kerry Express",
   "Flash Express",
   "Thailand Post",
+  "UPS",
   "Others",
 ] as const;
 
@@ -32,7 +33,7 @@ export const STATUS_LIST_IN = ["Purchased", "Received"];
 export const STATUS_LIST_OUT = ["Invoiced", "Returned"];
 
 // (กลุ่ม Gold)
-export const FINENESS_GOLD_NUMERIC = [333, 375, 417, 750, 916, 958, 999.9];
+export const FINENESS_GOLD_NUMERIC = [333, 375, 417, 585, 750, 917, 958, 999];
 // (กลุ่ม Palladium)
 export const FINENESS_PALLADIUM_NUMERIC = [140, 950];
 // (กลุ่ม Platinum)
@@ -124,3 +125,10 @@ export type RawSearchParams = {
   shipping_agent?: any;
   fineness?: any;
 };
+
+// --- Dashboard
+export interface DashboardSummary {
+  totalBalance: number;
+  transactionCount: number;
+  lastTransactionDate: Date | null;
+}

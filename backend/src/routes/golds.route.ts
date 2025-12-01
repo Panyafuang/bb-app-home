@@ -84,11 +84,16 @@ const getGoldsValidation = [
     .toFloat()
     .isFloat()
     .withMessage("calculated_loss must be >= 0"),
-
   query("sort")
     .optional()
-    .isIn(["timestamp_tz:asc", "timestamp_tz:desc"])
-    .withMessage("sort must be 'timestamp_tz:asc' or 'timestamp_tz:desc'"),
+    .isString() // เปลี่ยนจาก .isIn(...) เป็นเช็คว่าเป็น String ธรรมดา (หรือจะเพิ่ม whitelist ให้ครบทุกคอลัมน์ก็ได้)
+    .custom((value) => {
+      // ตรวจสอบ Format ว่าต้องเป็น "column:direction"
+      const parts = value.split(":");
+      if (parts.length !== 2) throw new Error("Invalid sort format. Use 'field:asc' or 'field:desc'");
+      if (!["asc", "desc"].includes(parts[1])) throw new Error("Invalid sort direction");
+      return true;
+    }),
 ];
 
 const createGoldValidation = [
@@ -263,6 +268,9 @@ const updateGoldValidation = [
       return true;
     }),
 ];
+
+// GET: /api/v1/gold_records/summary
+router.get("/summary", goldsController.getDashboardSummary);
 
 // (ควรวางไว้ก่อน /:id เพื่อไม่ให้ express สับสนว่า 'export-csv' คือ id)
 // GET: /api/v1/gold_records/export-csv

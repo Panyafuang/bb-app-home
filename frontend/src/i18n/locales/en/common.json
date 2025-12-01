@@ -24,7 +24,7 @@
     "status": "Status",
     "good_details": "Good Details",
     "shipping_agent": "Shipping Agent",
-    "calculated_loss": "Calc. Loss (g)"
+    "calculated_loss": "Calc. Loss (%)"
   },
   "modal.delete.title": "Confirm delete",
   "modal.delete.desc": "Do you want to delete this record? This action cannot be undone.",
@@ -157,5 +157,15 @@
       "csv": "Export CSV",
       "Preparing_export": "Preparing export..."
     }
+  },
+  "dashboard": {
+    "summary_title": "System Overview",
+    "total_balance": "Gold Balance",
+    "recent_transactions": "Recent Transactions",
+    "last_transaction": "Last Updated",
+    "quick_actions": "Quick Actions",
+    "add_new": "Add New Record",
+    "view_all": "View All",
+    "open_grafana": "Open Analytics"
   }
 }

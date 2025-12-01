@@ -5,6 +5,7 @@ import { PoolClient } from "pg";
 import { pool } from "../../db/pool";
 import {
   CreateGoldDto,
+  DashboardSummary,
   GoldRecord,
   Ledger,
   UpdateGoldDto,
@@ -139,17 +140,35 @@ export async function queryGolds(
   const { clause, values, nextIndex } = buildWhere(p);
 
   // กำหนดการเรียงลำดับ
-  // const orderBy = p.sort === "timestamp_tz:asc" ? `ORDER BY timestamp_tz ASC, id ASC` : `ORDER BY timestamp_tz DESC, id DESC`;
-  const orderBy = `ORDER BY updated_at DESC`;
+  let orderBy = `ORDER BY timestamp_tz DESC`; // ค่า Default
+
+  if (p.sort) {
+    const [col, dir] = p.sort.split(":");
+    const direction = dir === "asc" ? "ASC" : "DESC";
+
+    // Whitelist คอลัมน์ที่อนุญาตให้ Sort (ป้องกัน SQL Injection)
+    const allowedColumns = [
+      "timestamp_tz", "reference_number", "ledger", "gold_in_grams",
+      "gold_out_grams", "net_gold_grams", "counterpart", "fineness",
+      "status", "good_details", "shipping_agent", "calculated_loss",
+      "updated_at", "created_at"
+    ];
+
+    if (allowedColumns.includes(col)) {
+      // กรณีพิเศษ: ถ้า Sort ด้วยน้ำหนัก อาจจะอยากให้เรียง ID ด้วยเพื่อความแน่นอน
+      orderBy = `ORDER BY ${col} ${direction}, id ${direction}`;
+    }
+  }
 
   // สร้าง SQL query สำหรับดึงข้อมูล
   const listSql = `
   SELECT *
     FROM ${GOLD_RECORD}
     ${clause}
-    ${orderBy}
+    ${orderBy}  
     LIMIT $${nextIndex} OFFSET $${nextIndex + 1};
   `;
+
   const listValues = [...values, p.limit ?? 50, p.offset ?? 0];
 
   // สร้าง SQL query สำหรับนับจำนวนรายการทั้งหมด
@@ -391,4 +410,25 @@ export function getGoldRecordsStream(c: PoolClient) {
   const stream = c.query(query);
 
   return stream;
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  log("getDashboardSummary");
+
+  const sql = ` 
+	  SELECT 
+      COALESCE(SUM(net_gold_grams), 0) as "totalBalance",
+      COUNT(id) as "transactionCount",
+      MAX(timestamp_tz) as "lastTransactionDate"
+    FROM ${GOLD_RECORD}
+    `;
+
+  const { rows } = await pool.query(sql);
+  const row = rows[0];
+
+  return {
+    totalBalance: Number(row?.totalBalance ?? 0),
+    transactionCount: Number(row?.transactionCount ?? 0),
+    lastTransactionDate: row?.lastTransactionDate ?? null,
+  }
 }

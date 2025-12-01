@@ -3,7 +3,7 @@
 import debugFactory from "debug";
 
 import * as goldsRepo from "../modules/golds/golds.repo";
-import { CreateGoldDto, GoldRecord, RawSearchParams, UpdateGoldDto } from "../types/golds";
+import { CreateGoldDto, DashboardSummary, GoldRecord, RawSearchParams, UpdateGoldDto } from "../types/golds";
 import { withTx } from "../db/tx";
 import { AppError } from "../common/app-error";
 import { pool } from "../db/pool";
@@ -64,9 +64,7 @@ export async function searchGolds(rawParams: RawSearchParams): Promise<{ items: 
     fineness: rawParams.fineness,
     // (Frontend ควรแปลง "6%" เป็น 0.06 มาให้แล้ว)
     calculated_loss: parseNumber(rawParams.calculated_loss),
-    sort: (rawParams.sort?.toString() ?? "timestamp_tz:desc") as
-      | "timestamp_tz:asc"
-      | "timestamp_tz:desc",
+    sort: rawParams.sort?.toString() ?? "timestamp_tz:desc",
     limit,
     offset,
   };
@@ -169,4 +167,9 @@ export async function getGoldsStream(client: PoolClient) {
   log("getGoldsStream");
 
   return goldsRepo.getGoldRecordsStream(client);
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  log("getDashboardSummary");
+  return goldsRepo.getDashboardSummary();
 }

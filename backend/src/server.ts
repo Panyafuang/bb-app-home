@@ -7,6 +7,7 @@ import app from "./app";
 const log = debugFactory('app:server');
 const PORT = Number(process.env.PORT || 4000);
 
+
 const start = async () => {
   // Check .env
   if (!process.env.DATABASE_URL) {

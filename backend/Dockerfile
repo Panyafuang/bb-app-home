@@ -14,7 +14,7 @@ COPY frontend/package.json ./frontend/
 
 #    (pnpm install ที่ Root จะติดตั้ง devDependencies ของทุก workspace 
 #     เพราะมี --prod=false)
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --no-frozen-lockfile --prod=false
 
 # (Copy โค้ดทั้งหมด - เหมือนเดิม)
 COPY . .

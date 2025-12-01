@@ -1,58 +1,94 @@
--- Initialize the bb_gold database for jewelry manufacturer gold bookkeeping
--- This script creates the gold_record table with the required schema
+-- ============================================================
+-- BB Gold Database Initialization (Consolidated Script)
+-- ============================================================
 
--- Enable UUID generation extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+BEGIN;
 
--- Create enum type for category values
-CREATE TYPE category_enum AS ENUM (
+-- 1. Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+-- 2. Create Enum Type (Updated from 07-fix-ledger-enum.sql)
+CREATE TYPE public.ledger_enum AS ENUM (
     'Beauty Bijoux',
-    'PV fine', 
-    'PV green',
-    'PV Accessories'
+    'Green Gold',
+    'Palladium',
+    'Platinum',
+    'PV Accessories',
+    'PV Fine Gold'
 );
 
--- Create the gold_record table
-CREATE TABLE IF NOT EXISTS gold_record (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    timestamp_tz TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reference_number VARCHAR(100) NOT NULL,
-    details TEXT,
-    gold_in_grams NUMERIC(10, 3) NOT NULL CHECK (gold_in_grams >= 0),
-    remarks TEXT,
-    category category_enum NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for better query performance
-CREATE INDEX idx_gold_record_timestamp ON gold_record(timestamp_tz);
-CREATE INDEX idx_gold_record_reference ON gold_record(reference_number);
-CREATE INDEX idx_gold_record_category ON gold_record(category);
-
--- Create a function to automatically update the updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- 3. Create Update Timestamp Function
+CREATE OR REPLACE FUNCTION public.update_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
--- Create trigger to automatically update updated_at on record modification
+-- 4. Create Table (Final Structure with all columns)
+CREATE TABLE public.gold_record (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    timestamp_tz timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    reference_number character varying(100) NOT NULL,
+    
+    -- Weight Tracking
+    gold_in_grams numeric(10,3) NOT NULL CHECK (gold_in_grams >= 0),
+    gold_out_grams numeric(10,3) DEFAULT 0 CHECK (gold_out_grams >= 0),
+    net_gold_grams numeric(10,3) GENERATED ALWAYS AS ((gold_in_grams - gold_out_grams)) STORED,
+    calculated_loss numeric(10,2),
+    
+    -- Categorization
+    ledger public.ledger_enum NOT NULL,
+    fineness numeric,
+    
+    -- Details
+    good_details text,
+    remarks text,
+    status text,
+    
+    -- Counterparties
+    counterpart character varying(100),
+    shipping_agent character varying(100),
+    related_reference_number character varying(100),
+    
+    -- Audit
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT gold_record_pkey PRIMARY KEY (id)
+);
+
+-- 5. Create Indexes for Performance
+CREATE INDEX idx_gold_record_timestamp ON public.gold_record USING btree (timestamp_tz);
+CREATE INDEX idx_gold_record_reference ON public.gold_record USING btree (reference_number);
+CREATE INDEX idx_gold_record_ledger ON public.gold_record USING btree (ledger);
+CREATE INDEX idx_gold_record_counterpart ON public.gold_record USING btree (counterpart);
+CREATE INDEX idx_gold_record_status ON public.gold_record USING btree (status);
+CREATE INDEX idx_gold_record_related_reference ON public.gold_record USING btree (related_reference_number);
+CREATE INDEX idx_gold_record_gold_out ON public.gold_record USING btree (gold_out_grams);
+CREATE INDEX idx_gold_record_net_gold ON public.gold_record USING btree (net_gold_grams);
+
+-- 6. Create Trigger for auto-updating updated_at
 CREATE TRIGGER update_gold_record_updated_at 
-    BEFORE UPDATE ON gold_record 
+    BEFORE UPDATE ON public.gold_record 
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION public.update_updated_at_column();
 
--- Insert some sample data for testing (optional - remove if not needed)
-INSERT INTO gold_record (reference_number, details, gold_in_grams, remarks, category) VALUES
-    ('REF-2024-001', 'Initial gold inventory for Beauty Bijoux line', 125.500, 'High quality 18k gold', 'Beauty Bijoux'),
-    ('REF-2024-002', 'Fine jewelry production batch', 89.250, 'Pure gold for premium pieces', 'PV fine'),
-    ('REF-2024-003', 'Eco-friendly jewelry materials', 156.750, 'Recycled gold for green line', 'PV green'),
-    ('REF-2024-004', 'Accessory production materials', 67.125, 'Standard gold alloy for accessories', 'PV Accessories');
+-- 7. Add Comments (Documentation)
+COMMENT ON COLUMN public.gold_record.calculated_loss IS 'Calculated loss in grams (numeric with 2 decimal places)';
+COMMENT ON COLUMN public.gold_record.ledger IS 'Ledger category: Beauty Bijoux, Green Gold, Palladium, Platinum, PV Accessories, PV Fine Gold';
+COMMENT ON COLUMN public.gold_record.related_reference_number IS 'Reference number of related transaction (for linking)';
+COMMENT ON COLUMN public.gold_record.counterpart IS 'Business entity or partner involved in the transaction';
+COMMENT ON COLUMN public.gold_record.fineness IS 'Gold fineness/purity (e.g., 0.999 for 24k, 0.750 for 18k)';
+COMMENT ON COLUMN public.gold_record.good_details IS 'Detailed description of the goods/items';
+COMMENT ON COLUMN public.gold_record.status IS 'Transaction status (e.g., pending, completed, cancelled)';
+COMMENT ON COLUMN public.gold_record.shipping_agent IS 'Shipping or logistics provider';
 
--- Grant permissions (adjust as needed for your security requirements)
-GRANT ALL PRIVILEGES ON TABLE gold_record TO bb_user;
+-- 8. Grant Permissions (Crucial for App Access)
+GRANT ALL PRIVILEGES ON TABLE public.gold_record TO bb_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO bb_user;
-GRANT EXECUTE ON FUNCTION update_updated_at_column() TO bb_user;
+GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO bb_user;
+
+COMMIT;

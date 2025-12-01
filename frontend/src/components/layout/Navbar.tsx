@@ -29,24 +29,7 @@ export default function Navbar({
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-gray-500">
-            {/* <a className="border-b-2 border-indigo-500 pb-1 font-medium text-gray-900">
-              Dashboard
-            </a>
-            <a className="hover:text-gray-900">Team</a>
-            <a className="hover:text-gray-900">Projects</a>
-            <a className="hover:text-gray-900">Calendar</a> */}
           </nav>
-
-          {/* กลาง: Search — เอา ml-auto ออก และจำกัดความกว้าง */}
-          {/* <div className="w-full max-w-xl md:mx-6">
-            <label className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-gray-400 focus-within:ring-2 focus-within:ring-indigo-200">
-              <FiSearch className="text-lg" />
-              <input
-                placeholder={t("search.submit") ?? "Search"}
-                className="w-full bg-transparent text-gray-700 outline-none placeholder:text-gray-400"
-              />
-            </label>
-          </div> */}
 
           {/* ขวา: กลุ่มปุ่ม — ใส่ ml-auto ให้ชิดขวาสุด */}
           <div className="ml-auto flex items-center gap-2">

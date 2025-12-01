@@ -55,7 +55,7 @@ services:
       DB_USER: ${POSTGRES_USER:-bb_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-bb_password}
       DB_DATABASE: ${POSTGRES_DB:-bb_gold}
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bb_user}:${POSTGRES_PASSWORD:-bb_password}@postgres:5432/${POSTGRES_DB:-bb_gold}
       DEBUG: "app:*" 
     depends_on:
       postgres:
@@ -122,8 +122,6 @@ services:
     profiles:
       - tools
     command: sh -c "npm install -g pnpm && pnpm install && pnpm import:csv"
-
-# ❌ (ลบ) 'volumes' ที่อยู่ด้านนอกสุด เพราะไฟล์ของคุณใช้ bind mount
 
 networks:
   bb-gold-network:

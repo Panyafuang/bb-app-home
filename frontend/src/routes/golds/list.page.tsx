@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 
 import { useGoldsQuery } from "@/features/golds/hooks/useGoldsQuery";
-import RecordsTable from "@/features/golds/components/RecordsTable";
+import RecordsTable, {
+  type SortConfig,
+} from "@/features/golds/components/RecordsTable";
 import Pagination from "@/components/ui/Pagination";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import SearchBar from "@/features/golds/components/SearchBar";
@@ -17,14 +20,43 @@ export default function GoldListPage() {
 
   const { data, isLoading, filters, setFilters, refetch } = useGoldsQuery({
     page: 1,
-    limit: 50, // จำนวนต่อหน้าเริ่มต้น
+    limit: 50,
+    sort: "updated_at:desc"
   });
+
   const rows = Array.isArray(data) ? data : data?.items ?? [];
   const page = data?.page ?? filters.page ?? 1;
   const limit = data?.limit ?? filters.limit ?? 10;
   const total = data?.total ?? 0;
-
   const [editingRow, setEditingRow] = useState<any | null>(null);
+
+  /** Logic สำหรับการ Sort */
+  // แปลง string "key:direction" จาก filters ให้เป็น Object { key, direction } เพื่อส่งให้ Table แสดงผล
+  const currentSortStr = filters.sort || "updated_at:desc"; // ค่า default
+  const [currentSortKey, currentSortDir] = currentSortStr.split(":");
+
+  const sortConfig: SortConfig = {
+    key: currentSortKey,
+    direction: currentSortDir as "asc" | "desc",
+  };
+
+  // ฟังก์ชัน Callback เมื่อ User กดหัวตาราง
+  const handleSort = (key: string) => {
+    setFilters((prev: any) => {
+      const prevSortStr = prev.sort || "timestamp_tz:desc";
+      const [prevKey, prevDir] = prevSortStr.split(":");
+
+      let newDirection = "desc"; // เริ่มต้นด้วย desc เสมอถ้ากดคอลัมน์ใหม่
+
+      if (prevKey === key) {
+        // ถ้ากดคอลัมน์เดิม -> สลับ direction
+        newDirection = prevDir === "asc" ? "desc" : "asc";
+      }
+
+      // อัปเดต state filters -> Hook useGoldsQuery จะยิง API ใหม่ให้อัตโนมัติ
+      return { ...prev, sort: `${key}:${newDirection}` };
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -46,13 +78,25 @@ export default function GoldListPage() {
         }}
         onSubmit={async (dto) => {
           if (editingRow) {
-            // ----- UPDATE -----
-            await updateGold(editingRow.id, dto); // ต้อง import API updateGold
-            setEditingRow(null); // กลับเป็น create mode
-            refetch();
+            try {
+              // ----- UPDATE -----
+              await updateGold(editingRow.id, dto); // ต้อง import API updateGold
+              toast.success("Update successful!");
+              setEditingRow(null); // กลับเป็น create mode
+              // ✅ เพิ่มบรรทัดนี้: บังคับ Reset Sort กลับมาเป็น "แก้ไขล่าสุด"
+              setFilters((prev: any) => ({ ...prev, sort: "updated_at:desc" }));
+
+              refetch();
+            } catch (error) {
+              toast.error("Update failed");
+            }
           } else {
             // ----- CREATE -----
+            // อันนี้มี toast ใน hook useCreateGold อยู่แล้ว ไม่ต้องทำอะไร
             await m.mutateAsync(dto);
+            // ✅ เพิ่มบรรทัดนี้: บังคับ Reset Sort กลับมาเป็น "แก้ไขล่าสุด" เช่นกัน
+            setFilters((prev: any) => ({ ...prev, sort: "updated_at:desc" }));
+
             refetch();
           }
         }}
@@ -61,7 +105,7 @@ export default function GoldListPage() {
       <div className="border border-gray-200 rounded-2xl p-4 mt-7 bg-white">
         <div className="flex justify-between px-4">
           <h5
-            className="mb-4 text-2xl font-semibold text-gray-700 md:text-xl lg:text-3xl"
+            className="mb-4 text-lg font-semibold text-gray-700 md:text-lg lg:text-xl"
             style={{ marginBottom: "0" }}
           >
             {t("header.transactions")}
@@ -80,6 +124,8 @@ export default function GoldListPage() {
           onEdit={(row) => setEditingRow(row)} // <<< ส่งค่าเข้า state
           page={page}
           limit={limit}
+          sortConfig={sortConfig}
+          onSort={handleSort}
         />
         <Pagination
           page={page}

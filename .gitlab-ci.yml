@@ -1,0 +1,305 @@
+stages:
+  - build
+  - deploy
+  - release
+
+# Note: Configure these variables in GitLab Project Settings > CI/CD > Variables
+# DEV_SERVER: Development server IP address
+# PROD_SERVER: Production server IP address  
+# SERVER_USER: SSH user for deployment
+# DEPLOY_DIR: Deployment directory on remote server
+# POSTGRES_DB: PostgreSQL database name
+# POSTGRES_USER: PostgreSQL user name
+# POSTGRES_PASSWORD: PostgreSQL password
+# POSTGRES_PORT: PostgreSQL port (default: 5432)
+# BACKEND_PORT: Backend API port (default: 4000)
+# FRONTEND_PORT: Frontend web port (default: 5173)
+# ADMINER_PORT: Adminer database UI port (default: 8080)
+# GRAFANA_PORT: Grafana monitoring port (default: 3000)
+# GRAFANA_ADMIN_USER: Grafana admin username
+# GRAFANA_ADMIN_PASSWORD: Grafana admin password
+# TZ: Timezone (default: Europe/Zurich)
+
+build_images:
+  stage: build
+  image: docker:24-cli
+  tags:
+    - docker
+  
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_TAG'
+  
+  services:
+    - docker:24-dind
+  
+  before_script:
+    # Validate required variables
+    - |
+        echo "Validating CI/CD variables..."
+        echo "DEBUG: DEV_SERVER='$DEV_SERVER'"
+        echo "DEBUG: PROD_SERVER='$PROD_SERVER'"
+        echo "DEBUG: SERVER_USER='$SERVER_USER'"
+        echo "DEBUG: DEPLOY_DIR='$DEPLOY_DIR'"
+        echo "DEBUG: POSTGRES_DB='$POSTGRES_DB'"
+        echo "DEBUG: POSTGRES_USER='$POSTGRES_USER'"
+        echo "DEBUG: POSTGRES_PASSWORD='***'"
+        echo "DEBUG: BACKEND_PORT='$BACKEND_PORT'"
+        echo "DEBUG: FRONTEND_PORT='$FRONTEND_PORT'"
+        echo "DEBUG: CI_COMMIT_BRANCH='$CI_COMMIT_BRANCH'"
+        echo "DEBUG: CI_COMMIT_TAG='$CI_COMMIT_TAG'"
+        
+        MISSING_VARS=""
+        [ -z "$DEV_SERVER" ] && MISSING_VARS="$MISSING_VARS DEV_SERVER"
+        [ -z "$PROD_SERVER" ] && MISSING_VARS="$MISSING_VARS PROD_SERVER"
+        [ -z "$SERVER_USER" ] && MISSING_VARS="$MISSING_VARS SERVER_USER"
+        [ -z "$DEPLOY_DIR" ] && MISSING_VARS="$MISSING_VARS DEPLOY_DIR"
+        [ -z "$POSTGRES_DB" ] && MISSING_VARS="$MISSING_VARS POSTGRES_DB"
+        [ -z "$POSTGRES_USER" ] && MISSING_VARS="$MISSING_VARS POSTGRES_USER"
+        [ -z "$POSTGRES_PASSWORD" ] && MISSING_VARS="$MISSING_VARS POSTGRES_PASSWORD"
+        
+        if [ -n "$MISSING_VARS" ]; then
+          echo "❌ ERROR: Missing required CI/CD variables:$MISSING_VARS"
+          echo ""
+          echo "Please check these in GitLab:"
+          echo "Project Settings > CI/CD > Variables"
+          echo ""
+          echo "Make sure:"
+          echo "  1. Environment scope is '*' (all environments)"
+          echo "  2. If 'Protected' is checked, the branch must be protected"
+          echo "  3. Variables are set at PROJECT level (not group)"
+          echo ""
+          echo "Required variables:"
+          echo "  DEV_SERVER: <dev-server-ip>"
+          echo "  PROD_SERVER: <prod-server-ip>"
+          echo "  SERVER_USER: <ssh-user>"
+          echo "  DEPLOY_DIR: /home/<user>/bb-gold"
+          echo "  POSTGRES_DB: bb_gold"
+          echo "  POSTGRES_USER: bb_user"
+          echo "  POSTGRES_PASSWORD: <your-password>"
+          echo "  BACKEND_PORT: 4000"
+          echo "  FRONTEND_PORT: 5173"
+          echo "  ADMINER_PORT: 8080"
+          echo "  GRAFANA_PORT: 3000"
+          echo "  GRAFANA_ADMIN_USER: admin"
+          echo "  GRAFANA_ADMIN_PASSWORD: <your-password>"
+          echo "  TZ: Europe/Zurich"
+          exit 1
+        fi
+        echo "✅ All required variables are set"
+
+    # Install dependencies
+    - apk add --no-cache bash openssh-client rsync curl
+
+    # Setup SSH key from GitLab file variable
+    - |
+        set -e
+        mkdir -p ~/.ssh
+        cat "$SSH_PRIVATE_KEY" > ~/.ssh/deploy-key
+        chmod 600 ~/.ssh/deploy-key
+
+    # Determine target server and add to known hosts
+    - |
+        if [ -n "$CI_COMMIT_TAG" ]; then
+          TARGET_SERVER="$PROD_SERVER"
+          echo "Building for PRODUCTION (tagged release) - $PROD_SERVER"
+        else
+          TARGET_SERVER="$DEV_SERVER"
+          echo "Building for DEVELOPMENT - $DEV_SERVER"
+        fi
+        
+        # Add server to known hosts
+        mkdir -p ~/.ssh
+        ssh-keyscan -H $TARGET_SERVER >> ~/.ssh/known_hosts
+        
+        # Quick connectivity check to fail fast if key is missing
+        ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no -o BatchMode=yes $SERVER_USER@$TARGET_SERVER 'echo "SSH connection ready"'
+  
+  script:
+    # Determine target server and sync project files
+    - |
+        if [ -n "$CI_COMMIT_TAG" ]; then
+          TARGET_SERVER="$PROD_SERVER"
+        else
+          TARGET_SERVER="$DEV_SERVER"
+        fi
+        
+        echo "Syncing files to $TARGET_SERVER..."
+        rsync -avz --delete \
+          -e "ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no -o BatchMode=yes" \
+          --exclude 'node_modules' \
+          --exclude 'dist' \
+          --exclude 'build' \
+          --exclude '.git' \
+          --exclude 'persist' \
+          --exclude '.env' \
+          ./ $SERVER_USER@$TARGET_SERVER:$DEPLOY_DIR/
+    
+    # Build images on remote server
+    - |
+        if [ -n "$CI_COMMIT_TAG" ]; then
+          TARGET_SERVER="$PROD_SERVER"
+        else
+          TARGET_SERVER="$DEV_SERVER"
+        fi
+        
+        echo "Building on $TARGET_SERVER..."
+        ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no -o BatchMode=yes $SERVER_USER@$TARGET_SERVER << EOF
+          cd $DEPLOY_DIR
+
+          # Pull latest base images
+          docker compose pull || true
+          
+          # Export GitLab CI variables for docker compose
+          export CI_COMMIT_SHA="${CI_COMMIT_SHA}"
+          export CI_COMMIT_SHORT_SHA="${CI_COMMIT_SHORT_SHA}"
+          export CI_COMMIT_REF_NAME="${CI_COMMIT_REF_NAME}"
+          export CI_COMMIT_TAG="${CI_COMMIT_TAG}"
+          
+          # Build application images with version info
+          docker compose build
+        EOF
+
+deploy_to_server:
+  stage: deploy
+  image: docker:24-cli
+  tags:
+    - docker
+  
+  before_script:
+    # Install dependencies
+    - apk add --no-cache bash openssh-client curl
+
+    # Setup SSH key from GitLab file variable
+    - |
+        set -e
+        mkdir -p ~/.ssh
+        cat "$SSH_PRIVATE_KEY" > ~/.ssh/deploy-key
+        chmod 600 ~/.ssh/deploy-key
+
+    # Add server to known hosts
+    - ssh-keyscan -H $DEV_SERVER >> ~/.ssh/known_hosts
+  
+  script:
+    # Deploy using docker compose on remote server
+    - |
+        ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no -o BatchMode=yes $SERVER_USER@$DEV_SERVER "cd $DEPLOY_DIR && \
+          echo 'Creating .env file for DEVELOPMENT...' && \
+          echo 'POSTGRES_DB=$POSTGRES_DB' > .env && \
+          echo 'POSTGRES_USER=$POSTGRES_USER' >> .env && \
+          echo 'POSTGRES_PASSWORD=$POSTGRES_PASSWORD' >> .env && \
+          echo 'POSTGRES_PORT=${POSTGRES_PORT:-5432}' >> .env && \
+          echo 'BACKEND_PORT=${BACKEND_PORT:-4000}' >> .env && \
+          echo 'FRONTEND_PORT=${FRONTEND_PORT:-5173}' >> .env && \
+          echo 'ADMINER_PORT=${ADMINER_PORT:-8080}' >> .env && \
+          echo 'GRAFANA_PORT=${GRAFANA_PORT:-3000}' >> .env && \
+          echo 'GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}' >> .env && \
+          echo 'GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD' >> .env && \
+          echo 'TZ=${TZ:-Asia/Bangkok}' >> .env && \
+          echo 'DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB' >> .env && \
+          docker compose down --remove-orphans || docker rm -f \$(docker ps -aq --filter name=bb-gold) 2>/dev/null || true && \
+          docker compose up -d && \
+          docker compose ps && \
+          docker compose logs --tail=50"
+  
+  environment:
+    name: development
+    url: http://$DEV_SERVER:${FRONTEND_PORT:-5173}
+  
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  
+  # Retry on failure
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+deploy_release:
+  stage: deploy
+  image: docker:24-cli
+  tags:
+    - docker
+  
+  before_script:
+    # Install dependencies
+    - apk add --no-cache bash openssh-client curl
+
+    # Setup SSH key from GitLab file variable
+    - |
+        set -e
+        mkdir -p ~/.ssh
+        cat "$SSH_PRIVATE_KEY" > ~/.ssh/deploy-key
+        chmod 600 ~/.ssh/deploy-key
+
+    # Add production server to known hosts
+    - ssh-keyscan -H $PROD_SERVER >> ~/.ssh/known_hosts
+  
+  script:
+    # Deploy using docker compose on remote production server
+    - |
+        ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no -o BatchMode=yes $SERVER_USER@$PROD_SERVER "cd $DEPLOY_DIR && \
+          echo 'Creating .env file for PRODUCTION...' && \
+          echo 'POSTGRES_DB=$POSTGRES_DB' > .env && \
+          echo 'POSTGRES_USER=$POSTGRES_USER' >> .env && \
+          echo 'POSTGRES_PASSWORD=$POSTGRES_PASSWORD' >> .env && \
+          echo 'POSTGRES_PORT=${POSTGRES_PORT:-5432}' >> .env && \
+          echo 'BACKEND_PORT=${BACKEND_PORT:-4000}' >> .env && \
+          echo 'FRONTEND_PORT=${FRONTEND_PORT:-5173}' >> .env && \
+          echo 'ADMINER_PORT=${ADMINER_PORT:-8080}' >> .env && \
+          echo 'GRAFANA_PORT=${GRAFANA_PORT:-3000}' >> .env && \
+          echo 'GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}' >> .env && \
+          echo 'GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD' >> .env && \
+          echo 'TZ=${TZ:-Asia/Bangkok}' >> .env && \
+          echo 'DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB' >> .env && \
+          docker compose down --remove-orphans || docker rm -f \$(docker ps -aq --filter name=bb-gold) 2>/dev/null || true && \
+          docker compose up -d && \
+          docker compose ps && \
+          docker compose logs --tail=50"
+  
+  environment:
+    name: production
+    url: http://$PROD_SERVER:${FRONTEND_PORT:-5173}
+  
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  
+  # Retry on failure
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+create_release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  tags:
+    - docker
+  
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  
+  script:
+    - echo "Creating release for tag $CI_COMMIT_TAG"
+  
+  release:
+    tag_name: '$CI_COMMIT_TAG'
+    description: |
+      Release $CI_COMMIT_TAG
+      
+      ## Changes
+      Deployed to production server $PROD_SERVER
+      
+      ## Services
+      - Frontend: http://$PROD_SERVER:${FRONTEND_PORT:-5173}
+      - Backend API: http://$PROD_SERVER:${BACKEND_PORT:-4000}
+      - Adminer (DB UI): http://$PROD_SERVER:${ADMINER_PORT:-8080}
+      - Grafana: http://$PROD_SERVER:${GRAFANA_PORT:-3000}
+      
+      ## Build Information
+      - Commit: $CI_COMMIT_SHA
+      - Pipeline: $CI_PIPELINE_URL
+      - Built at: $CI_JOB_STARTED_AT
+    name: 'Release $CI_COMMIT_TAG'

@@ -10,17 +10,24 @@
     "dev": "ts-node import-script.ts",
     "dev:import": "ts-node import-script.ts ./import.csv"
   },
-  "keywords": ["gold", "jewelry", "csv", "import", "postgres"],
+  "keywords": [
+    "gold",
+    "jewelry",
+    "csv",
+    "import",
+    "postgres"
+  ],
   "author": "BB Gold Team",
   "license": "MIT",
   "dependencies": {
-    "pg": "^8.11.3",
-    "csv-parse": "^5.5.2"
+    "csv-parse": "^5.5.2",
+    "csv-stringify": "^6.6.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@types/pg": "^8.10.7",
-    "typescript": "^5.2.2",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }

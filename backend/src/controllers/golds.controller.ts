@@ -222,3 +222,18 @@ export async function exportGoldsCsv(
     next(err);
   }
 }
+
+
+/**
+ * GET /api/v1/gold_records/summary
+ */
+export async function getDashboardSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    log("getDashboardSummary");
+
+    const summary = await goldsService.getDashboardSummary()
+    return ok(res, summary);
+  } catch (err) {
+    next(err);
+  }
+}

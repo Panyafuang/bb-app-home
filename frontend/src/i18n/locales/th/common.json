@@ -28,7 +28,7 @@
     "status": "สถานะ",
     "good_details": "รายละเอียดสินค้า",
     "shipping_agent": "ตัวแทนขนส่ง",
-    "calculated_loss": "ทองสูญเสีย (กรัม)"
+    "calculated_loss": "ทองสูญเสีย (%)"
   },
 
   "modal.delete.title": "ยืนยันการลบ",
@@ -162,5 +162,15 @@
       "csv": "Export CSV",
       "Preparing_export": "Preparing export..."
     }
+  },
+  "dashboard": {
+    "summary_title": "ภาพรวมระบบ",
+    "total_balance": "ยอดทองคำคงเหลือ",
+    "recent_transactions": "รายการล่าสุด",
+    "last_transaction": "อัปเดตล่าสุด",
+    "quick_actions": "เมนูด่วน",
+    "add_new": "เพิ่มรายการใหม่",
+    "view_all": "ดูรายการทั้งหมด",
+    "open_grafana": "เปิดระบบวิเคราะห์"
   }
 }
